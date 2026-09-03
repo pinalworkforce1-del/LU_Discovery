@@ -936,11 +936,20 @@ function StrengthLensDialog({ open, onOpenChange, mode, setMode, active, explore
             <div className="lens-list-progress"><Progress value={(explored.length / STRENGTH_LENS.length) * 100} /><span>{explored.length} of {STRENGTH_LENS.length} explored</span></div>
             <div className="strength-lens-list">
               {STRENGTH_LENS.map((item, index) => (
-               <Button variant="ghost" onClick={() => setMode("list")}><List /> All scenes</Button>
-                  <span>{explored.includes(item.id) ? <Check /> : index + 1}</span>
-                  <div><strong>{item.title}</strong><small>{item.strengths.join(" • ")}</small></div>
-                  <ChevronRight />
-                </button>
+  <button
+    key={item.id}
+    type="button"
+    className={explored.includes(item.id) ? "is-visited" : ""}
+    onClick={() => onSelect(item.id)}
+  >
+    <span>{explored.includes(item.id) ? <Check /> : index + 1}</span>
+    <div>
+      <strong>{item.title}</strong>
+      <small>{item.strengths.join(" • ")}</small>
+    </div>
+    <ChevronRight />
+  </button>
+))}
               ))}
             </div>
           </>
