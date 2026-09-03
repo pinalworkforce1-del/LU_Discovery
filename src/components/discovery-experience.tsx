@@ -5,12 +5,16 @@ import {
   ArrowLeft,
   Check,
   ClipboardList,
+  Cloud,
+  CloudOff,
   ChevronRight,
   Eye,
   ExternalLink,
   ImageIcon,
   List,
   LockKeyhole,
+  LogOut,
+  Mail,
   Map,
   Pause,
   Play,
@@ -24,6 +28,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast, Toaster } from "sonner";
+import type { Session } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +43,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { authRedirectUrl, supabase, supabaseConfigured } from "@/lib/supabase";
 
 type StageId = "strengths" | "values" | "purpose" | "support" | "nextQuest";
 type ScenePhase = StageId | "map";
@@ -99,6 +105,7 @@ type SavedJourney = {
 };
 
 const STORAGE_KEY = "level-up-discovery-pilot-v3";
+const MODULE_ID = "discovery";
 const hotspot = (left: string, top: string, width: string, height: string): Hotspot => ({ left, top, width, height });
 const asset = (slide: number, type: "image" | "video") =>
   `${import.meta.env.BASE_URL}assets/discovery/scenes/${type === "image" ? "slide" : "narration"}-${String(slide).padStart(2, "0")}.${type === "image" ? "webp" : "mp4"}`;
@@ -497,7 +504,37 @@ export function DiscoveryExperience() {
   const [playing, setPlaying] = useState(false);
   const [narrationStarted, setNarrationStarted] = useState(false);
   const [narrationDone, setNarrationDone] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"local" | "saving" | "saved" | "error">("local");
+  const [authEmail, setAuthEmail] = useState("");
+  const [sendingLink, setSendingLink] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!supabase) {
+      setAuthReady(true);
+      setCloudReady(true);
+      return;
+    }
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setSession(data.session);
+      setAuthReady(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthReady(true);
+      setCloudReady(!nextSession);
+    });
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -529,6 +566,66 @@ export function DiscoveryExperience() {
   useEffect(() => {
     if (ready) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(journey));
   }, [journey, ready]);
+
+  useEffect(() => {
+    if (!ready || !authReady || !session || !supabase) return;
+    let active = true;
+    setCloudReady(false);
+    supabase
+      .from("module_progress")
+      .select("journey_state")
+      .eq("user_id", session.user.id)
+      .eq("module_id", MODULE_ID)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          setSyncStatus("error");
+          toast.error("Cloud progress could not be loaded. Device progress is still available.");
+        } else if (data?.journey_state) {
+          const remote = data.journey_state as unknown as SavedJourney;
+          const merged = {
+            ...DEFAULT_JOURNEY,
+            ...remote,
+            exploredStrengths: remote.exploredStrengths ?? [],
+            strengthLensResponses: remote.strengthLensResponses ?? {},
+            explorationSelections: remote.explorationSelections ?? {},
+            completionDate: remote.completionDate ?? "",
+            exploredVisuals: remote.exploredVisuals ?? {},
+            scene: Math.min(remote.scene ?? 0, SCENES.length - 1),
+          };
+          setJourney(merged);
+          setDraftName(merged.name);
+          setStarted(Boolean(merged.name));
+          setSyncStatus("saved");
+        }
+        setCloudReady(true);
+      });
+    return () => { active = false; };
+  }, [ready, authReady, session?.user.id]);
+
+  useEffect(() => {
+    if (!ready || !cloudReady || !session || !supabase) return;
+    const client = supabase;
+    const userId = session.user.id;
+    setSyncStatus("saving");
+    const timer = window.setTimeout(async () => {
+      const { error } = await client.from("module_progress").upsert({
+        user_id: userId,
+        module_id: MODULE_ID,
+        journey_state: journey,
+        xp: journey.completed.length * 100,
+        is_complete: journey.completed.length === STAGES.length,
+        completed_at: journey.completionDate || null,
+      }, { onConflict: "user_id,module_id" });
+      if (!error && journey.name) {
+        await client.from("profiles").update({ display_name: journey.name }).eq("user_id", userId);
+      }
+      setSyncStatus(error ? "error" : "saved");
+      if (error) toast.error("Cloud save paused. Progress remains saved on this device.");
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [journey, ready, cloudReady, session?.user.id]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -700,7 +797,40 @@ export function DiscoveryExperience() {
     toast("Discovery restarted");
   }
 
-  if (!ready) return <main className="level-up-shell" aria-label="Loading Discovery" />;
+  async function sendMagicLink() {
+    const email = authEmail.trim().toLowerCase();
+    if (!email || !supabase) return void toast.error("Enter a valid email address.");
+    setSendingLink(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: authRedirectUrl() },
+    });
+    setSendingLink(false);
+    if (error) return void toast.error(error.message);
+    setMagicLinkSent(true);
+    toast.success("Check your email for your Level Up sign-in link.");
+  }
+
+  async function signOut() {
+    await supabase?.auth.signOut();
+    setSession(null);
+    setCloudReady(false);
+    setSyncStatus("local");
+  }
+
+  if (!ready || !authReady) return <main className="level-up-shell" aria-label="Loading Discovery" />;
+
+  if (supabaseConfigured && !session) {
+    return (
+      <AuthScreen
+        email={authEmail}
+        setEmail={setAuthEmail}
+        sending={sendingLink}
+        sent={magicLinkSent}
+        onSubmit={sendMagicLink}
+      />
+    );
+  }
 
   return (
     <main className={`level-up-shell ${journey.largeText ? "large-text" : ""} ${journey.reducedMotion ? "reduce-motion" : ""}`}>
@@ -719,11 +849,13 @@ export function DiscoveryExperience() {
           <Progress value={percent} aria-label={`${percent}% complete`} />
         </div>
         <div className="topbar-actions">
+          {session ? <span className={`cloud-status ${syncStatus}`} title={syncStatus === "saved" ? "Progress saved to Level Up" : syncStatus === "saving" ? "Saving progress" : "Progress is saved on this device"}>{syncStatus === "error" ? <CloudOff /> : <Cloud />}</span> : null}
           {started ? <Button className="hud-button" variant="ghost" size="icon" onClick={() => setCoachSummaryOpen(true)} aria-label="Open Discovery Coach Snapshot"><ClipboardList /></Button> : null}
           <Button className="hud-button" variant="ghost" size="icon" onClick={() => setAccessibilityOpen(true)} aria-label="Open accessibility and scene description"><Accessibility /></Button>
           <Button className="hud-button" variant="ghost" size="icon" onClick={togglePlayback} aria-label={playing ? "Pause narration" : "Play narration"}>{playing ? <Pause /> : <Play />}</Button>
           <Button className="hud-button" variant="ghost" size="icon" onClick={toggleAudio} aria-label={journey.audioOn ? "Mute narration" : "Turn on narration"}>{journey.audioOn ? <Volume2 /> : <VolumeX />}</Button>
           <Button className="hud-button" variant="ghost" size="icon" onClick={resetJourney} aria-label="Restart Discovery"><RotateCcw /></Button>
+          {session ? <Button className="hud-button" variant="ghost" size="icon" onClick={signOut} aria-label="Sign out of Level Up"><LogOut /></Button> : null}
         </div>
       </header>
 
@@ -754,7 +886,7 @@ export function DiscoveryExperience() {
                 <input id="first-name" value={draftName} onChange={(event) => setDraftName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && startJourney()} placeholder="First name" autoComplete="given-name" />
                 <Button onClick={startJourney} size="lg">Begin Discovery <ChevronRight /></Button>
               </div>
-              <small>Your progress is saved on this device during the pilot.</small>
+              <small>{session ? `Signed in as ${session.user.email}. Progress saves to your Level Up account.` : "Your progress is saved on this device during the pilot."}</small>
             </div>
           ) : null}
 
@@ -870,6 +1002,39 @@ export function DiscoveryExperience() {
         <h2>{journey.name}&apos;s Discovery Summary</h2>
         {summary.map((item) => <div key={item.label}><h3>{item.label}</h3><p>{item.values.join(", ")}</p></div>)}
       </aside>
+    </main>
+  );
+}
+
+function AuthScreen({ email, setEmail, sending, sent, onSubmit }: {
+  email: string;
+  setEmail: (email: string) => void;
+  sending: boolean;
+  sent: boolean;
+  onSubmit: () => void;
+}) {
+  return (
+    <main className="auth-shell">
+      <Toaster theme="dark" position="top-center" richColors />
+      <section className="auth-card" aria-labelledby="auth-title">
+        <div className="auth-brand"><span className="brand-mark">LU</span><div><strong>LEVEL UP</strong><span>DISCOVERY</span></div></div>
+        <p className="eyebrow">YOUR JOURNEY. YOUR PROGRESS.</p>
+        <h1 id="auth-title">Sign in to Level Up</h1>
+        <p>We’ll email you a secure link. No password to create or remember.</p>
+        {sent ? (
+          <div className="magic-link-sent" role="status">
+            <Mail />
+            <div><strong>Check your email</strong><span>Open the Level Up link on this device to continue. You can close this message after signing in.</span></div>
+          </div>
+        ) : (
+          <>
+            <label htmlFor="level-up-email">Email address</label>
+            <Input id="level-up-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onSubmit()} placeholder="you@example.com" autoComplete="email" />
+            <Button size="lg" onClick={onSubmit} disabled={sending}>{sending ? "Sending secure link…" : <>Email my sign-in link <ChevronRight /></>}</Button>
+          </>
+        )}
+        <small>Your reflections are private to your account. Level Up only saves information used for your journey and coach conversation.</small>
+      </section>
     </main>
   );
 }
