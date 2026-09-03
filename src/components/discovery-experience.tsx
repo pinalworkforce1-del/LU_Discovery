@@ -1476,7 +1476,14 @@ function JourneyMap({ name, onCertificate, onSummary, onReview }: { name: string
         <span>Resume District is now unlocked.</span>
         <div className="map-actions"><Button onClick={onSummary}><ClipboardList /> Coach snapshot</Button><Button variant="outline" onClick={onCertificate}><Trophy /> Certificate</Button><Button variant="outline" onClick={onReview}><ArrowLeft /> Review</Button></div>
       </div>
-      <button className="resume-district-hotspot" onClick={() => toast("Resume District will connect here next.")}><span className="hotspot-ring" /><span className="hotspot-label"><Sparkles /> Resume District unlocked</span></button>
+      <a
+        className="resume-district-hotspot"
+        href="https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery"
+        aria-label="Enter your Level Up Journey. Resume District is unlocked."
+      >
+        <span className="hotspot-ring" />
+        <span className="hotspot-label"><Sparkles /> Enter Journey — Resume District unlocked</span>
+      </a>
     </div>
   );
 }
