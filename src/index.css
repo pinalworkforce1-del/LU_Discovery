@@ -139,6 +139,21 @@ body {
 /* Level Up Discovery */
 body { margin: 0; overflow-x: hidden; color: #f6f7ff; background: radial-gradient(circle at 50% -10%, #291361 0, #05081c 38rem, #02040e 100%); font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif; }
 button, input, textarea { font: inherit; }
+.auth-shell { min-height: 100vh; display: grid; place-items: center; padding: 1.25rem; background: radial-gradient(circle at 50% 10%, #392080 0, #08102b 34rem, #02040e 100%); }
+.auth-card { width: min(480px, calc(100vw - 2.5rem)); padding: clamp(1.4rem, 4vw, 2.5rem); display: grid; gap: 1rem; border: 1px solid #4bdfff55; border-radius: 1.35rem; background: linear-gradient(145deg, #07102bea, #160943ed); box-shadow: 0 30px 100px #000b, 0 0 60px #5e20d72e; }
+.auth-brand { display: flex; align-items: center; gap: .8rem; margin-bottom: .5rem; }
+.auth-brand div { display: grid; letter-spacing: .12em; }
+.auth-brand div span { margin-top: .25rem; color: #28e8f6; font-size: .72rem; font-weight: 900; letter-spacing: .28em; }
+.auth-card h1 { margin: 0; font-size: clamp(2rem, 7vw, 3.25rem); line-height: .98; }
+.auth-card > p:not(.eyebrow) { margin: 0 0 .25rem; color: #cad5f2; line-height: 1.55; }
+.auth-card label { color: #dce7ff; font-size: .82rem; font-weight: 900; }
+.auth-card input { height: 50px; border-color: #5bcfed75; color: white; background: #03091dd9; }
+.auth-card > button { min-height: 50px; color: #02101b !important; background: linear-gradient(90deg, #31e5f5, #54efb7) !important; font-weight: 950; }
+.auth-card small { color: #9bacca; line-height: 1.5; }
+.magic-link-sent { padding: 1rem; display: flex; gap: .85rem; border: 1px solid #50e9c475; border-radius: .8rem; background: #07342b99; }
+.magic-link-sent svg { flex: 0 0 auto; color: #62f5cf; }
+.magic-link-sent div { display: grid; gap: .35rem; }
+.magic-link-sent span { color: #c8e8df; line-height: 1.45; }
 .level-up-shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; isolation: isolate; }
 .level-up-shell::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .25; background-image: linear-gradient(#12dff40b 1px, transparent 1px), linear-gradient(90deg, #12dff40b 1px, transparent 1px); background-size: 40px 40px; mask-image: linear-gradient(#000, transparent 75%); }
 .level-up-topbar { width: min(1500px, calc(100% - 2rem)); min-height: 64px; margin: .75rem auto .6rem; padding: .55rem .75rem; display: grid; grid-template-columns: 230px minmax(240px, 1fr) 230px; align-items: center; gap: 1.5rem; border: 1px solid #45c1ff2e; border-radius: 1.15rem; background: #040a1fc7; box-shadow: 0 18px 60px #0005; backdrop-filter: blur(18px); }
@@ -155,8 +170,13 @@ button, input, textarea { font: inherit; }
 .topbar-progress [data-slot="progress"] { height: 7px; background: #4868ab59; box-shadow: inset 0 0 8px #020513; }
 .topbar-progress [data-slot="progress-indicator"] { background: linear-gradient(90deg, #12dff4, #30f5b2, #ffe05d); box-shadow: 0 0 12px #13dcff; }
 .topbar-actions { display: flex; justify-content: flex-end; gap: .2rem; }
+.cloud-status { width: 36px; height: 36px; display: grid; place-items: center; color: #72f3ce; }
+.cloud-status.saving { color: #ffe16b; animation: cloud-breathe 1.1s ease-in-out infinite alternate; }
+.cloud-status.error { color: #ff8d9c; }
+.cloud-status svg { width: 18px; height: 18px; }
 .hud-button { color: #c9d7fa !important; }
 .hud-button:hover { color: white !important; background: #10587e3b !important; }
+@keyframes cloud-breathe { to { opacity: .45; } }
 
 .game-stage { min-height: 0; display: grid; place-items: center; padding: 0 1rem; }
 .scene-frame { position: relative; width: min(1500px, calc((100vh - 165px) * 1.7777), calc(100vw - 2rem)); aspect-ratio: 16/9; overflow: hidden; border: 1px solid #5fcaff52; border-radius: 1.1rem; background: #02040c; box-shadow: 0 30px 90px #000b, 0 0 42px #1670ff1f; }
