@@ -101,7 +101,7 @@ type SavedJourney = {
 const STORAGE_KEY = "level-up-discovery-pilot-v3";
 const hotspot = (left: string, top: string, width: string, height: string): Hotspot => ({ left, top, width, height });
 const asset = (slide: number, type: "image" | "video") =>
-  `/assets/discovery/scenes/${type === "image" ? "slide" : "narration"}-${String(slide).padStart(2, "0")}.${type === "image" ? "webp" : "mp4"}`;
+  `${import.meta.env.BASE_URL}assets/discovery/scenes/${type === "image" ? "slide" : "narration"}-${String(slide).padStart(2, "0")}.${type === "image" ? "webp" : "mp4"}`;
 
 const STRENGTH_OPTIONS = [
   "I enjoy helping people.",
