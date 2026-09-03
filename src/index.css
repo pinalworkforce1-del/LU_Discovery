@@ -198,6 +198,8 @@ button, input, textarea { font: inherit; }
 .hotspot-label svg { width: 14px; height: 14px; color: #6ffaff; }
 .world-hotspot:hover .hotspot-label, .world-hotspot:focus-visible .hotspot-label { transform: translateY(-3px); }
 .world-hotspot:focus-visible { outline: 3px solid white; outline-offset: 4px; border-radius: .7rem; }
+.resume-district-hotspot:hover .hotspot-label, .resume-district-hotspot:focus-visible .hotspot-label { transform: translateY(-3px); }
+.resume-district-hotspot:focus-visible { outline: 3px solid white; outline-offset: 4px; border-radius: .7rem; }
 .world-hotspot.is-complete .hotspot-ring { border-color: #49f8aa; box-shadow: 0 0 18px #43f59f; animation: none; }
 .world-hotspot.is-complete .hotspot-ring::after { background: #45f19b; box-shadow: 0 0 14px #52ffb0; }
 .world-hotspot.is-complete .hotspot-label { border-color: #47eea2; }
