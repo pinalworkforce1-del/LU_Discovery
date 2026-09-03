@@ -983,7 +983,7 @@ function StrengthLensDialog({ open, onOpenChange, mode, setMode, active, explore
 
             <DialogFooter className="lens-dialog-nav">
               <Button variant="ghost" onClick={() => onMove(-1)}><ArrowLeft /> Previous</Button>
-              <Button variant="outline" onClick={() => setMode("list")}><List /> All scenes</Button>
+              <Button variant="ghost" onClick={() => setMode("list")}>
               <Button variant="ghost" onClick={() => onMove(1)}>Next <ChevronRight /></Button>
             </DialogFooter>
           </>
