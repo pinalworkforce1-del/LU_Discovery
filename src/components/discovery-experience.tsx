@@ -584,7 +584,7 @@ export function DiscoveryExperience() {
           toast.error("Cloud progress could not be loaded. Device progress is still available.");
         } else if (data?.journey_state) {
           const remote = data.journey_state as unknown as SavedJourney;
-          const merged = {
+          const normalizedRemote = {
             ...DEFAULT_JOURNEY,
             ...remote,
             exploredStrengths: remote.exploredStrengths ?? [],
@@ -594,6 +594,10 @@ export function DiscoveryExperience() {
             exploredVisuals: remote.exploredVisuals ?? {},
             scene: Math.min(remote.scene ?? 0, SCENES.length - 1),
           };
+          const localIsFurther =
+            journey.completed.length > normalizedRemote.completed.length ||
+            (journey.completed.length === normalizedRemote.completed.length && journey.scene > normalizedRemote.scene);
+          const merged = localIsFurther ? journey : normalizedRemote;
           setJourney(merged);
           setDraftName(merged.name);
           setStarted(Boolean(merged.name));
@@ -606,23 +610,9 @@ export function DiscoveryExperience() {
 
   useEffect(() => {
     if (!ready || !cloudReady || !session || !supabase) return;
-    const client = supabase;
-    const userId = session.user.id;
     setSyncStatus("saving");
     const timer = window.setTimeout(async () => {
-      const { error } = await client.from("module_progress").upsert({
-        user_id: userId,
-        module_id: MODULE_ID,
-        journey_state: journey,
-        xp: journey.completed.length * 100,
-        is_complete: journey.completed.length === STAGES.length,
-        completed_at: journey.completionDate || null,
-      }, { onConflict: "user_id,module_id" });
-      if (!error && journey.name) {
-        await client.from("profiles").update({ display_name: journey.name }).eq("user_id", userId);
-      }
-      setSyncStatus(error ? "error" : "saved");
-      if (error) toast.error("Cloud save paused. Progress remains saved on this device.");
+      await persistJourney(journey);
     }, 900);
     return () => window.clearTimeout(timer);
   }, [journey, ready, cloudReady, session?.user.id]);
@@ -721,7 +711,9 @@ export function DiscoveryExperience() {
     setPlaying(false);
     setNarrationStarted(false);
     setNarrationDone(false);
-    setJourney((current) => ({ ...current, scene: safeIndex }));
+    const nextJourney = { ...journey, scene: safeIndex };
+    setJourney(nextJourney);
+    if (cloudReady) void persistJourney(nextJourney, true);
     if (play) window.setTimeout(replayNarration, 160);
   }
 
@@ -768,12 +760,14 @@ export function DiscoveryExperience() {
   function saveActivity(responses: ActivityResponse) {
     if (!stage) return;
     const alreadyComplete = journey.completed.includes(stage.id);
-    setJourney((current) => ({
-      ...current,
-      answers: { ...current.answers, [stage.id]: responses },
-      completed: alreadyComplete ? current.completed : [...current.completed, stage.id],
-      completionDate: stage.id === "nextQuest" ? (current.completionDate || new Date().toISOString()) : current.completionDate,
-    }));
+    const nextJourney: SavedJourney = {
+      ...journey,
+      answers: { ...journey.answers, [stage.id]: responses },
+      completed: alreadyComplete ? journey.completed : [...journey.completed, stage.id],
+      completionDate: stage.id === "nextQuest" ? (journey.completionDate || new Date().toISOString()) : journey.completionDate,
+    };
+    setJourney(nextJourney);
+    if (cloudReady) void persistJourney(nextJourney, true);
     setActivityOpen(false);
     setStrengthLensOpen(false);
     toast.success(alreadyComplete ? "Reflection updated" : "+100 XP — Reflection complete", {
@@ -794,7 +788,26 @@ export function DiscoveryExperience() {
     setActivityOpen(false);
     setNarrationStarted(false);
     setNarrationDone(false);
+    if (cloudReady) void persistJourney(DEFAULT_JOURNEY, true);
     toast("Discovery restarted");
+  }
+
+  async function persistJourney(nextJourney: SavedJourney, quiet = false) {
+    if (!session || !supabase) return;
+    setSyncStatus("saving");
+    const { error } = await supabase.from("module_progress").upsert({
+      user_id: session.user.id,
+      module_id: MODULE_ID,
+      journey_state: nextJourney,
+      xp: nextJourney.completed.length * 100,
+      is_complete: nextJourney.completed.length === STAGES.length,
+      completed_at: nextJourney.completionDate || null,
+    }, { onConflict: "user_id,module_id" });
+    if (!error && nextJourney.name) {
+      await supabase.from("profiles").update({ display_name: nextJourney.name }).eq("user_id", session.user.id);
+    }
+    setSyncStatus(error ? "error" : "saved");
+    if (error && !quiet) toast.error("Cloud save paused. Progress remains saved on this device.");
   }
 
   async function sendMagicLink() {
