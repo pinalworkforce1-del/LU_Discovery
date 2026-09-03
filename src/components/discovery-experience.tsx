@@ -949,7 +949,6 @@ function StrengthLensDialog({ open, onOpenChange, mode, setMode, active, explore
     </div>
     <ChevronRight />
   </button>
-))}
               ))}
             </div>
           </>
