@@ -9,6 +9,8 @@ function originalContinue(){return document.querySelector<HTMLButtonElement>(".s
 function fallbackPlay(){return document.querySelector<HTMLButtonElement>(".scene-frame .resume-narration")}
 function fallbackSkip(){return document.querySelector<HTMLButtonElement>(".scene-frame .skip-narration")}
 function accessibilityButton(){return hudButton(/Open accessibility/i)}
+function startPanel(){return document.querySelector<HTMLElement>(".scene-frame .start-panel")}
+function beginDiscoveryButton(){return startPanel()?.querySelector<HTMLButtonElement>("button") ?? null}
 
 function makeRail(){
   const rail=document.createElement("aside");
@@ -24,7 +26,13 @@ function makeRail(){
     <button type="button" class="rail-continue" data-lu="continue">Continue <span>→</span></button>`;
   rail.querySelector<HTMLButtonElement>('[data-lu="audio"]')!.onclick=()=>{hudButton(/Mute narration|Turn on narration/i)?.click();queue()};
   rail.querySelector<HTMLButtonElement>('[data-lu="access"]')!.onclick=()=>{accessibilityButton()?.click();queue()};
-  rail.querySelector<HTMLButtonElement>('[data-lu="play"]')!.onclick=()=>{const b=hudButton(/Pause narration|Play narration/i);(b||fallbackPlay())?.click();queue()};
+  rail.querySelector<HTMLButtonElement>('[data-lu="play"]')!.onclick=()=>{
+    const begin=beginDiscoveryButton();
+    if(begin){begin.click();queue();return;}
+    const b=hudButton(/Pause narration|Play narration/i);
+    (b||fallbackPlay())?.click();
+    queue();
+  };
   rail.querySelector<HTMLButtonElement>('[data-lu="replay"]')!.onclick=()=>{const v=video();if(!v)return;v.currentTime=0;v.play().catch(()=>fallbackPlay()?.click());queue()};
   rail.querySelector<HTMLButtonElement>('[data-lu="skip"]')!.onclick=()=>{fallbackSkip()?.click();queue()};
   rail.querySelector<HTMLButtonElement>('[data-lu="continue"]')!.onclick=()=>{originalContinue()?.click();queue()};
@@ -49,6 +57,7 @@ function refresh(){
   const v=video();
   bind(v);
   const has=!!v;
+  const atStart=!!startPanel();
   const audio=rail.querySelector<HTMLButtonElement>('[data-lu="audio"]')!;
   const access=rail.querySelector<HTMLButtonElement>('[data-lu="access"]')!;
   const play=rail.querySelector<HTMLButtonElement>('[data-lu="play"]')!;
@@ -60,12 +69,13 @@ function refresh(){
   audio.querySelector<HTMLElement>(".control-icon")!.textContent=v?.muted?"🔇":"🔊";
   audio.querySelector<HTMLElement>(".control-label")!.textContent=v?.muted?"Audio off":"Audio on";
   access.disabled=!accessibilityButton();
-  replay.disabled=!has;
-  skip.disabled=!fallbackSkip();
-  play.disabled=!has;
+  replay.disabled=atStart||!has;
+  skip.disabled=atStart||!fallbackSkip();
+  play.disabled=atStart?!beginDiscoveryButton():!has;
+
   const playing=!!v&&!v.paused&&!v.ended;
-  play.querySelector<HTMLElement>(".control-icon")!.textContent=playing?"Ⅱ":"▶";
-  play.querySelector<HTMLElement>(".control-label")!.textContent=playing?"Pause narration":"Play narration";
+  play.querySelector<HTMLElement>(".control-icon")!.textContent=atStart?"▶":playing?"Ⅱ":"▶";
+  play.querySelector<HTMLElement>(".control-label")!.textContent=atStart?"Start Discovery":playing?"Pause narration":"Play narration";
 
   const source=originalContinue();
   next.hidden=!source;
