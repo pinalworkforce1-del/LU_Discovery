@@ -1,4 +1,6 @@
 const RAIL_ID = "level-up-scene-rail";
+const PORTAL_URL = "https://pinalworkforce1-del.github.io/Level_Up_Portal/";
+const RETURN_LABEL = "Return to Opportunity City";
 
 function hudButton(pattern: RegExp) {
   return Array.from(document.querySelectorAll<HTMLButtonElement>(".level-up-topbar button"))
@@ -9,6 +11,60 @@ function originalContinue(){return document.querySelector<HTMLButtonElement>(".s
 function fallbackPlay(){return document.querySelector<HTMLButtonElement>(".scene-frame .resume-narration")}
 function fallbackSkip(){return document.querySelector<HTMLButtonElement>(".scene-frame .skip-narration")}
 function accessibilityButton(){return hudButton(/Open accessibility/i)}
+function returnButton(){return hudButton(/Sign out of Level Up|Return to Opportunity City|Saving progress before returning/i)}
+function delay(ms:number){return new Promise<void>(resolve=>window.setTimeout(resolve,ms))}
+
+function configureReturnButton(){
+  const button=returnButton();
+  if(!button||button.dataset.luReturning==="1")return;
+  if(button.getAttribute("aria-label")!==RETURN_LABEL)button.setAttribute("aria-label",RETURN_LABEL);
+  if(button.title!==RETURN_LABEL)button.title=RETURN_LABEL;
+}
+
+async function waitForCloudSave(button:HTMLButtonElement){
+  button.dataset.luReturning="1";
+  button.disabled=true;
+  button.setAttribute("aria-label","Saving progress before returning to Opportunity City");
+  button.title="Saving progress…";
+
+  // Discovery writes device state immediately and debounces the Supabase write
+  // for 900 ms. Give that write time to begin, then wait for it to settle.
+  await delay(1100);
+  const deadline=Date.now()+5000;
+  while(Date.now()<deadline&&document.querySelector(".cloud-status.saving"))await delay(120);
+
+  if(document.querySelector(".cloud-status.error")){
+    window.alert("Level Up saved your progress on this device, but could not confirm the cloud save yet. Please try Return to Opportunity City again in a moment.");
+    delete button.dataset.luReturning;
+    button.disabled=false;
+    button.setAttribute("aria-label",RETURN_LABEL);
+    button.title=RETURN_LABEL;
+    return false;
+  }
+  return true;
+}
+
+async function returnToOpportunityCity(button:HTMLButtonElement){
+  if(button.dataset.luReturning==="1")return;
+  if(await waitForCloudSave(button))window.location.href=PORTAL_URL;
+}
+
+// The original Discovery header control signs the participant out of the shared
+// Level Up session. Intercept it before React receives the click and repurpose it
+// as a safe return-to-city action instead. This leaves auth, progression, XP,
+// module completion, and Supabase logic untouched.
+document.addEventListener("click",event=>{
+  const target=event.target instanceof Element
+    ? event.target.closest<HTMLButtonElement>(".level-up-topbar button")
+    : null;
+  if(!target)return;
+  const label=target.getAttribute("aria-label")||"";
+  if(!/Sign out of Level Up|Return to Opportunity City|Saving progress before returning/i.test(label))return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  void returnToOpportunityCity(target);
+},true);
 
 function makeRail(){
   const rail=document.createElement("aside");
@@ -38,6 +94,7 @@ function bind(v:HTMLVideoElement|null){
 }
 
 function refresh(){
+  configureReturnButton();
   const shell=document.querySelector<HTMLElement>("main.level-up-shell");
   const stage=document.querySelector<HTMLElement>(".game-stage");
   if(!shell||!stage)return;
