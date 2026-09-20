@@ -31,6 +31,47 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build O*NET resume-builder index
+        run: |
+          mkdir -p public/assets
+          curl -fsSL https://www.onetcenter.org/dl_files/database/db_31_0_json/occupation_data.json -o /tmp/occupation_data.json
+          curl -fsSL https://www.onetcenter.org/dl_files/database/db_31_0_json/transferable_skills.json -o /tmp/transferable_skills.json
+          python - <<'PY'
+          import json
+          from collections import defaultdict
+
+          with open('/tmp/occupation_data.json', encoding='utf-8') as f:
+              occupations = json.load(f)['row']
+          with open('/tmp/transferable_skills.json', encoding='utf-8') as f:
+              ratings = json.load(f)['row']
+
+          by_code = defaultdict(dict)
+          for row in ratings:
+              if row.get('scale_name') != 'Importance':
+                  continue
+              if row.get('not_relevant') == 'Y':
+                  continue
+              name = row.get('element_name')
+              if not name:
+                  continue
+              score = float(row.get('data_value') or 0)
+              by_code[row['onetsoc_code']][name] = max(score, by_code[row['onetsoc_code']].get(name, 0))
+
+          compact = []
+          for occ in occupations:
+              ranked = sorted(by_code.get(occ['onetsoc_code'], {}).items(), key=lambda x: (-x[1], x[0]))
+              compact.append({
+                  'code': occ['onetsoc_code'],
+                  'title': occ['title'],
+                  'description': occ['description'],
+                  'skills': [name for name, _ in ranked[:8]],
+              })
+
+          with open('public/assets/onet-core.json', 'w', encoding='utf-8') as f:
+              json.dump({'version':'31.0','occupations':compact}, f, ensure_ascii=False, separators=(',',':'))
+          print(f"Wrote {len(compact)} O*NET occupations")
+          PY
+
       - name: Build site
         run: npm run build
         env:
