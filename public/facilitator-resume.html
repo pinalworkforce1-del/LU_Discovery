@@ -69,7 +69,7 @@
 </div></aside></div></main><div class="footer">Level Up Live • Resume District is a separate learning module inside the same connected classroom.</div>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
-const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co',SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc',ROOT='https://pinalworkforce1-del.github.io/Resume_District/assets/resume/scenes/',PUBLIC_ROOT='https://pinalworkforce1-del.github.io/LU_Discovery/',LIVE_VERSION='20260918resume2';
+const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co',SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc',ROOT='https://pinalworkforce1-del.github.io/Resume_District/assets/resume/scenes/',PUBLIC_ROOT='https://pinalworkforce1-del.github.io/LU_Discovery/',LIVE_VERSION='20260921resume3';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}),$=id=>document.getElementById(id),alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function randomCode(n=10){const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,b=>alphabet[b%alphabet.length]).join('')}
 const params=new URLSearchParams(location.search);let room=(params.get('room')||'').toUpperCase().replace(/[^A-Z2-9]/g,'');if(room.length<8){room=randomCode();const u=new URL(location.href);u.searchParams.set('room',room);history.replaceState({},'',u)}
