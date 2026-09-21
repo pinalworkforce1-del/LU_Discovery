@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Level Up • My Résumés</title>
+<style>
+:root{--navy:#102d49;--ink:#21313e;--muted:#60717d;--line:#cbd8df;--cyan:#41e4f2;--green:#2f7d4c;--gold:#e4a72b;--cream:#f7f4ec}
+*{box-sizing:border-box}body{margin:0;background:#06101f;color:var(--ink);font-family:Inter,Arial,sans-serif}.shell{max-width:1050px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;color:white;margin-bottom:18px}.brand b{display:block;font-size:12px;letter-spacing:.14em;color:#70eff8}.brand h1{margin:4px 0 0;font-size:32px}.back{color:white;text-decoration:none;border:1px solid #ffffff55;border-radius:10px;padding:10px 13px;font-weight:850}.hero,.card{background:#f8fbfc;border:1px solid var(--line);border-radius:18px;padding:20px}.hero{margin-bottom:14px;border-top:4px solid var(--cyan)}.hero p{color:var(--muted);line-height:1.5}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;padding:11px 14px;font-weight:900;text-decoration:none;cursor:pointer}.btn.green{background:var(--green);color:#fff}.btn.alt{background:#e9f0f4;color:var(--navy)}.btn.gold{background:var(--gold);color:#102d49}.status{margin:12px 0;color:#dce9f1}.grid{display:grid;gap:10px}.version{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:white;border:1px solid var(--line);border-radius:14px;padding:15px}.version h3{margin:0;color:var(--navy)}.version p{margin:5px 0 0;color:var(--muted);font-size:13px}.tag{display:inline-block;margin-top:7px;background:#e7f5eb;color:#267447;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:900}.empty{padding:18px;border:1px dashed #a9bcc7;border-radius:12px;color:var(--muted);background:#fff}.small{font-size:12px;color:var(--muted)}
+@media(max-width:640px){.shell{padding:14px}.top{align-items:flex-start}.brand h1{font-size:26px}.version{grid-template-columns:1fr}.version .btn{width:100%}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top"><div class="brand"><b>LEVEL UP • RESUME DISTRICT</b><h1>My Résumés</h1></div><a class="back" href="https://pinalworkforce1-del.github.io/Resume_District/">← Resume District</a></header>
+  <section class="hero">
+    <h2 style="margin-top:0">Your résumé workspace</h2>
+    <p>Your working résumé and saved targeted versions belong to your Level Up profile. Open one to update it, or start a new target without rebuilding your experience from scratch.</p>
+    <div class="actions">
+      <a class="btn green" href="resume-builder-prototype.html">Open Current Working Résumé →</a>
+      <a class="btn gold" href="resume-builder-prototype.html">+ Create / Target a Résumé</a>
+    </div>
+  </section>
+  <div class="status" id="status">Loading your saved résumés…</div>
+  <section class="card"><h2 style="margin-top:0">Saved targeted versions</h2><div class="grid" id="versions"></div></section>
+</main>
+<script>
+const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc';
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function readLevelUpSession(){try{const exact='sb-dnijrzotfyvmmnmueknk-auth-token';const keys=[exact,...Object.keys(localStorage).filter(k=>k.includes('dnijrzotfyvmmnmueknk')&&k.includes('auth-token'))];for(const key of [...new Set(keys)]){const raw=localStorage.getItem(key);if(!raw)continue;const x=JSON.parse(raw);const s=x?.access_token?x:x?.currentSession||x?.session||x?.data?.session||null;if(s?.access_token)return{key,session:s}}return null}catch(e){return null}}
+function jwtExpiry(token){try{const p=JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));return Number(p?.exp||0)}catch(e){return 0}}
+async function refresh(found){const r=found?.session?.refresh_token;if(!r)return null;const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({refresh_token:r})});if(!res.ok)return null;const data=await res.json();if(data?.access_token)localStorage.setItem(found.key,JSON.stringify(data));return data}
+async function token(){let f=readLevelUpSession();if(!f)return'';let s=f.session;if(!jwtExpiry(s.access_token)||jwtExpiry(s.access_token)<Math.floor(Date.now()/1000)+60){s=await refresh(f);if(!s)return''}return s.access_token||''}
+function userId(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))?.sub||''}catch(e){return''}}
+function fmt(d){try{return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(d))}catch(e){return''}}
+async function load(){
+  const t=await token();if(!t){$('status').textContent='Sign in to Level Up from Resume District to view your saved résumés.';$('versions').innerHTML='<div class="empty">No active Level Up sign-in was found in this browser.</div>';return}
+  const uid=userId(t);if(!uid)return;
+  const res=await fetch(SUPABASE_URL+'/rest/v1/resume_versions?user_id=eq.'+encodeURIComponent(uid)+'&select=id,version_name,target_role,occupation_code,created_at&order=created_at.desc',{headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+t}});
+  if(!res.ok){$('status').textContent='Saved résumés could not be loaded right now.';$('versions').innerHTML='<div class="empty">Your current working résumé is still available in Resume Builder.</div>';return}
+  const rows=await res.json();$('status').textContent=rows.length?rows.length+' saved résumé version'+(rows.length===1?'':'s'):'No saved targeted versions yet.';
+  $('versions').innerHTML=rows.length?rows.map(r=>'<article class="version"><div><h3>'+esc(r.target_role||r.version_name||'Saved Résumé')+'</h3><p>'+esc(r.version_name||'Level Up Resume')+(r.created_at?' • Saved '+fmt(r.created_at):'')+'</p>'+(r.occupation_code?'<span class="tag">O*NET '+esc(r.occupation_code)+'</span>':'')+'</div><a class="btn alt" href="resume-builder-prototype.html?version='+encodeURIComponent(r.id)+'">Open / Update →</a></article>').join(''):'<div class="empty">When you choose <b>Save Version</b> in Resume Builder, targeted copies will appear here.</div>';
+}
+load();
+</script>
+</body></html>
