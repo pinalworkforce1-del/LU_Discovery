@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Level Up • Coach View</title>
+<style>
+:root{--navy:#102d49;--cyan:#3db9c8;--green:#2f7d4c;--gold:#e4a72b;--purple:#65558f;--ink:#1d2e39;--muted:#667985;--line:#cbd8df;--bg:#eef3f5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif}.top{background:linear-gradient(90deg,#07162e,#123c52);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px}.brand{flex:1}.brand b{display:block;font-size:18px;letter-spacing:.05em}.brand span{font-size:10px;color:#bdebf1;letter-spacing:.09em}.pill{border-radius:999px;background:#ffffff18;padding:6px 9px;font-size:10px;font-weight:900}.wrap{max-width:1360px;margin:auto;padding:18px}.signin,.empty{max-width:560px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 20px 55px #0002}.signin h1,.empty h2{color:var(--navy)}.signin input{width:100%;padding:12px;border:1px solid #bfcfd7;border-radius:10px;font:inherit}.btn{border:0;border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer;background:var(--navy);color:#fff}.btn.gold{background:var(--gold);color:#17303c}.btn.alt{background:#e4ecef;color:#183b50}.signin .btn{width:100%;margin-top:10px;padding:12px}.notice{font-size:11px;color:var(--muted);line-height:1.45;margin-top:10px}.error{margin-top:10px;padding:10px;background:#fae8eb;color:#8b3643;border-radius:10px;font-size:12px}.toolbar{display:grid;grid-template-columns:1fr auto;gap:10px;margin:14px 0}.toolbar input{width:100%;padding:12px;border:1px solid #c5d4dc;border-radius:12px;font:inherit}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}.stat small{display:block;color:var(--muted);text-transform:uppercase;font-weight:900;font-size:9px;letter-spacing:.07em}.stat strong{display:block;color:var(--navy);font-size:24px;margin-top:3px}.grid{display:grid;gap:12px}.person{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 20px #0001}.personTop{display:flex;gap:12px;align-items:flex-start}.personTop>div:first-child{flex:1}.person h3{margin:0;color:var(--navy)}.meta{font-size:11px;color:var(--muted);margin-top:3px}.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.tag{font-size:9px;font-weight:950;border-radius:999px;padding:5px 8px;background:#eaf2f4;color:#2f5968}.tag.fac{background:#eee9fa;color:#5d4b88}.tag.self{background:#e8f5ee;color:#276a46}.tag.unlinked{background:#fff2d5;color:#7a5a0b}.progress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.module{border:1px solid #d7e0e5;border-radius:11px;padding:9px;background:#f9fbfc}.module.done{border-color:#a9d5bd;background:#edf8f1}.module b{font-size:11px;color:#294a59;display:block}.module span{font-size:9px;color:#6e808a;display:block;margin-top:3px}.module em{font-style:normal;font-size:9px;font-weight:900;color:#49616d}.insights{margin-top:12px;border-top:1px solid #e0e6e9;padding-top:10px}.insights h4{margin:0 0 7px;color:#365666}.insight{background:#f2f0f9;border-left:4px solid var(--purple);padding:9px;border-radius:8px;margin:6px 0;font-size:11px}.series{font-size:11px;font-weight:900;color:#48616d}.right{text-align:right}.hidden{display:none!important}@media(max-width:850px){.stats{grid-template-columns:1fr 1fr}.progress{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr}.right{text-align:left}}@media(max-width:520px){.stats,.progress{grid-template-columns:1fr}.personTop{display:block}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><b>LEVEL UP • COACH VIEW</b><span>TWO MODALITIES • ONE PARTICIPANT STORY</span></div><span class="pill" id="coachBadge">Staff access</span><button class="btn alt hidden" id="signOut">Sign out</button></header>
+<main class="wrap">
+<section class="signin" id="signin"><small>LEVEL UP STAFF</small><h1>Coach View</h1><p>Sign in with your authorized Level Up staff email. Participant classroom access remains login-free.</p><input id="email" type="email" autocomplete="email" placeholder="coach@example.com"><button class="btn" id="sendLink">Email my secure sign-in link</button><div class="notice">Only profiles assigned the <b>coach</b> or <b>admin</b> role can open participant records.</div><div class="error hidden" id="authError"></div></section>
+<section id="app" class="hidden">
+<div class="toolbar"><input id="search" placeholder="Search participant name or email"><button class="btn alt" id="refresh">Refresh</button></div>
+<div class="stats"><div class="stat"><small>Participants</small><strong id="sPeople">0</strong></div><div class="stat"><small>Facilitated</small><strong id="sFac">0</strong></div><div class="stat"><small>Self-paced</small><strong id="sSelf">0</strong></div><div class="stat"><small>Linked modalities</small><strong id="sLinked">0</strong></div></div>
+<div class="grid" id="grid"></div>
+</section>
+</main>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
+const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co',SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc',ENDPOINT=SUPABASE_URL+'/functions/v1/levelup-facilitated';
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}),$=id=>document.getElementById(id);
+let rows=[],coach=null;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const moduleNames={'discovery':'Discovery','resume-district':'Resume District','confidence-checkpoint':'Confidence Checkpoint','interview-arena':'Interview Arena','first-day-challenge':'First Day Challenge','shadow-passage':'Shadow Passage','money-moves':'Money Moves'};
+const sequence=['discovery','resume-district','confidence-checkpoint','interview-arena','first-day-challenge','shadow-passage','money-moves'];
+function fmt(d){if(!d)return'—';try{return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(d))}catch{return'—'}}
+async function roster(){
+ const {data:{session}}=await supabase.auth.getSession();if(!session)return null;
+ const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({action:'coach_roster'})});
+ const data=await res.json();if(!res.ok)throw new Error(data?.error||'Coach access unavailable.');return data
+}
+function mergedModules(p){
+ const map=new Map();
+ for(const row of p.progress||[]){
+   const key=row.module_id;
+   if(!map.has(key))map.set(key,{module_id:key,rows:[]});
+   map.get(key).rows.push(row)
+ }
+ return sequence.map(id=>map.get(id)||{module_id:id,rows:[]})
+}
+function render(){
+ const q=$('search').value.trim().toLowerCase(),filtered=rows.filter(p=>!q||String(p.display_name||'').toLowerCase().includes(q)||String(p.email||'').toLowerCase().includes(q));
+ $('sPeople').textContent=rows.length;$('sFac').textContent=rows.filter(x=>x.modalities?.includes('facilitated')).length;$('sSelf').textContent=rows.filter(x=>x.modalities?.includes('self_paced')).length;$('sLinked').textContent=rows.filter(x=>x.modalities?.length>1).length;
+ $('grid').innerHTML=filtered.length?filtered.map(p=>{
+   const mods=mergedModules(p),complete=mods.filter(m=>m.rows.some(r=>r.is_complete)).length;
+   return '<article class="person"><div class="personTop"><div><h3>'+esc(p.display_name||'Participant')+'</h3><div class="meta">'+esc(p.email||'No email')+' • Last activity '+fmt(p.last_seen_at||p.progress?.[0]?.updated_at||p.created_at)+'</div><div class="tags">'+(p.modalities||[]).map(m=>'<span class="tag '+(m==='facilitated'?'fac':'self')+'">'+(m==='facilitated'?'Facilitated':'Self-paced')+'</span>').join('')+(!p.linked&&p.modalities?.includes('facilitated')?'<span class="tag unlinked">Provisional identity</span>':'')+'</div></div><div class="right"><div class="series">'+complete+' / 7 core modules complete</div></div></div><div class="progress">'+mods.map(m=>{const done=m.rows.some(r=>r.is_complete),modes=[...new Set(m.rows.map(r=>r.delivery_mode))];const xp=Math.max(0,...m.rows.map(r=>Number(r.xp)||0));const updated=m.rows.map(r=>r.completed_at||r.updated_at).filter(Boolean).sort().reverse()[0];return '<div class="module '+(done?'done':'')+'"><b>'+esc(moduleNames[m.module_id]||m.module_id)+(done?' ✓':'')+'</b><span>'+(m.rows.length?(modes.map(x=>x==='facilitated'?'Facilitated':'Self-paced').join(' + ')):'Not recorded')+'</span><em>'+(xp?xp+' XP • ':'')+(updated?fmt(updated):'')+'</em></div>'}).join('')+'</div>'+(p.coach_insights?.length?'<div class="insights"><h4>Participant-approved coach insights</h4>'+p.coach_insights.map(i=>'<div class="insight"><b>'+esc(moduleNames[i.module_id]||i.module_id)+'</b><br>'+esc(JSON.stringify(i.insight_value))+'</div>').join('')+'</div>':'')+'</article>'
+ }).join(''):'<section class="empty"><h2>No participants match this search.</h2></section>'
+}
+async function load(){
+ try{
+   const data=await roster();if(!data)return showSignIn();
+   coach=data.coach;rows=data.participants||[];$('coachBadge').textContent=(coach.display_name||coach.email||'Coach')+' • '+coach.role;$('signin').classList.add('hidden');$('app').classList.remove('hidden');$('signOut').classList.remove('hidden');render()
+ }catch(err){showSignIn(err.message)}
+}
+function showSignIn(message=''){$('signin').classList.remove('hidden');$('app').classList.add('hidden');$('signOut').classList.add('hidden');if(message){$('authError').textContent=message;$('authError').classList.remove('hidden')}}
+$('sendLink').onclick=async()=>{const email=$('email').value.trim().toLowerCase();$('authError').classList.add('hidden');const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});if(error){$('authError').textContent=error.message;$('authError').classList.remove('hidden');return}$('sendLink').textContent='Check your email for the secure link';$('sendLink').disabled=true};
+$('signOut').onclick=async()=>{await supabase.auth.signOut();rows=[];showSignIn()};$('search').oninput=render;$('refresh').onclick=load;
+supabase.auth.onAuthStateChange(()=>load());load();
+</script>
+</body></html>
