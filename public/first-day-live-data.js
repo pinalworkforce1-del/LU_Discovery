@@ -146,7 +146,7 @@ export const data = {
           21
         ],
         [
-          "Plan your route",
+          "Protect your arrival plan",
           57,
           15,
           19,
@@ -539,15 +539,15 @@ export const data = {
       "A backup plan must be usable, not just available. Confirm who or what will get you there, when you must leave, how long each part takes, and whether the plan preserves your arrival buffer."
     ],
     "route": [
-      "Plan Your Route",
-      "Your normal ride cancels. What is your strongest next move?",
+      "Protect Your Arrival Plan",
+      "Your usual ride cancels before your shift. What is your strongest next move?",
       [
-        "Wait and hope the situation fixes itself",
-        "Use the backup route you planned and notify work early if needed",
+        "Wait and hope your ride becomes available again",
+        "Switch to the backup transportation option you planned. If it may change your arrival time, notify work early.",
         "Say nothing and arrive whenever you can"
       ],
       1,
-      "A dependable plan includes timing, a backup option, and early communication when circumstances change."
+      "A dependable arrival plan includes a backup transportation option, the timing for that option, and early communication if your arrival may be affected."
     ],
     "punctuality": [
       "Protect Your First Impression",
