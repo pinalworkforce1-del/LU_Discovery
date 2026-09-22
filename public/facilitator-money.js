@@ -44,7 +44,7 @@ const QUESTIONS={
 
 const params=new URLSearchParams(location.search);let room=(params.get('room')||'').toUpperCase().replace(/[^A-Z2-9]/g,'');
 if(room.length<8){room=randomCode();const u=new URL(location.href);u.searchParams.set('room',room);history.replaceState({},'',u)}
-const participantUrl=new URL('join-live.html',PUBLIC_ROOT);participantUrl.searchParams.set('room',room);participantUrl.searchParams.set('v',LIVE_VERSION);
+const participantUrl=new URL('join-live.html',PUBLIC_ROOT);participantUrl.searchParams.set('room',room);participantUrl.searchParams.set('module','money');participantUrl.searchParams.set('v',LIVE_VERSION);
 const displayUrl=new URL('presenter-discovery.html',location.href);displayUrl.searchParams.set('room',room);displayUrl.searchParams.set('v',LIVE_VERSION);
 $('roomCode').textContent=room;$('joinUrl').textContent=participantUrl.toString();
 
