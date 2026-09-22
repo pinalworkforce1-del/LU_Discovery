@@ -11,7 +11,7 @@
 <body>
 <header class="top"><div class="brand"><b>LEVEL UP • COACH VIEW</b><span>TWO MODALITIES • ONE PARTICIPANT STORY</span></div><span class="pill" id="coachBadge">Staff access</span><button class="btn alt hidden" id="signOut">Sign out</button></header>
 <main class="wrap">
-<section class="signin" id="signin"><small>LEVEL UP STAFF</small><h1>Coach View</h1><p>Sign in with your authorized Level Up staff email. Participant classroom access remains login-free.</p><input id="email" type="email" autocomplete="email" placeholder="coach@example.com"><button class="btn" id="sendLink">Email my secure sign-in link</button><div class="notice">Only profiles assigned the <b>coach</b> or <b>admin</b> role can open participant records.</div><div class="error hidden" id="authError"></div></section>
+<section class="signin" id="signin"><small>LEVEL UP STAFF</small><h1>Coach View</h1><p>Use your authorized staff email and Level Up Staff Access Code. No email delivery is required.</p><input id="email" type="email" autocomplete="email" placeholder="coach@example.com"><input id="staffCode" type="password" autocomplete="current-password" placeholder="Staff access code" style="margin-top:10px"><button class="btn" id="codeLogin">Enter Coach View</button><div class="notice"><b>Primary staff login.</b> Access codes are verified securely and open a 12-hour staff session.</div><button class="btn alt" id="sendLink" style="margin-top:14px">Backup: Email me a secure sign-in link</button><div class="notice">Only profiles assigned the <b>coach</b> or <b>admin</b> role can open participant records.</div><div class="error hidden" id="authError"></div></section>
 <section id="app" class="hidden">
 <div class="toolbar"><input id="search" placeholder="Search participant name or email"><select id="countyFilter"><option value="">All locations</option><option value="Pinal">Pinal</option><option value="Northern">Northern</option><option value="UFO - Eastern New Mexico">UFO - Eastern New Mexico</option><option value="Unassigned">Unassigned</option></select><label class="toggle"><input type="checkbox" id="showStaff"> Include staff/test accounts</label><button class="btn alt" id="refresh">Refresh</button></div>
 <div class="stats"><div class="stat"><small>Participants</small><strong id="sPeople">0</strong></div><div class="stat"><small>Facilitated</small><strong id="sFac">0</strong></div><div class="stat"><small>Self-paced</small><strong id="sSelf">0</strong></div><div class="stat"><small>Linked modalities</small><strong id="sLinked">0</strong></div></div>
@@ -23,15 +23,26 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
 const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co',SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc',ENDPOINT=SUPABASE_URL+'/functions/v1/levelup-facilitated';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}),$=id=>document.getElementById(id);
-let rows=[],coach=null;
+let rows=[],coach=null;const STAFF_TOKEN_KEY='levelup-coach-staff-token-v1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const moduleNames={'discovery':'Discovery','resume-district':'Resume District','confidence-checkpoint':'Confidence Checkpoint','interview-arena':'Interview Arena','first-day-challenge':'First Day Challenge','shadow-passage':'Shadow Passage','money-moves':'Money Moves'};
 const sequence=['discovery','resume-district','confidence-checkpoint','interview-arena','first-day-challenge','shadow-passage','money-moves'];
 function fmt(d){if(!d)return'—';try{return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(d))}catch{return'—'}}
+async function authHeaders(){
+ const token=localStorage.getItem(STAFF_TOKEN_KEY)||'';
+ if(token)return {'Content-Type':'application/json','X-Levelup-Staff-Token':token};
+ const {data:{session}}=await supabase.auth.getSession();
+ return session?{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token}:null
+}
 async function roster(){
- const {data:{session}}=await supabase.auth.getSession();if(!session)return null;
- const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({action:'coach_roster'})});
- const data=await res.json();if(!res.ok)throw new Error(data?.error||'Coach access unavailable.');return data
+ const headers=await authHeaders();if(!headers)return null;
+ const res=await fetch(ENDPOINT,{method:'POST',headers,body:JSON.stringify({action:'coach_roster'})});
+ const data=await res.json();
+ if(!res.ok){
+   if(res.status===401||res.status===403)localStorage.removeItem(STAFF_TOKEN_KEY);
+   throw new Error(data?.error||'Coach access unavailable.')
+ }
+ return data
 }
 function mergedModules(p){
  const map=new Map();
@@ -59,8 +70,8 @@ function render(){
  document.querySelectorAll('[data-download]').forEach(b=>b.onclick=e=>{e.stopPropagation();downloadParticipantSummary(b.dataset.download)});
 }
 async function detail(person_key,module_id){
- const {data:{session}}=await supabase.auth.getSession();if(!session)throw new Error('Staff session expired.');
- const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({action:'coach_detail',person_key,module_id})});
+ const headers=await authHeaders();if(!headers)throw new Error('Staff session expired.');
+ const res=await fetch(ENDPOINT,{method:'POST',headers,body:JSON.stringify({action:'coach_detail',person_key,module_id})});
  const data=await res.json();if(!res.ok)throw new Error(data?.error||'Module detail unavailable.');return data.detail
 }
 function label(k){return String(k).replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase())}
@@ -117,8 +128,23 @@ async function load(){
  }catch(err){showSignIn(err.message)}
 }
 function showSignIn(message=''){$('signin').classList.remove('hidden');$('app').classList.add('hidden');$('signOut').classList.add('hidden');if(message){$('authError').textContent=message;$('authError').classList.remove('hidden')}}
+$('codeLogin').onclick=async()=>{
+ const email=$('email').value.trim().toLowerCase(),access_code=$('staffCode').value.trim();
+ $('authError').classList.add('hidden');$('codeLogin').disabled=true;$('codeLogin').textContent='Signing in…';
+ try{
+   const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'staff_login',email,access_code})});
+   const data=await res.json();if(!res.ok)throw new Error(data?.error||'Staff sign-in failed.');
+   localStorage.setItem(STAFF_TOKEN_KEY,data.staff_token);$('staffCode').value='';await load()
+ }catch(err){$('authError').textContent=err.message;$('authError').classList.remove('hidden')}
+ finally{$('codeLogin').disabled=false;$('codeLogin').textContent='Enter Coach View'}
+};
+$('staffCode').onkeydown=e=>{if(e.key==='Enter')$('codeLogin').click()};
 $('sendLink').onclick=async()=>{const email=$('email').value.trim().toLowerCase();$('authError').classList.add('hidden');const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});if(error){$('authError').textContent=error.message;$('authError').classList.remove('hidden');return}$('sendLink').textContent='Check your email for the secure link';$('sendLink').disabled=true};
-$('signOut').onclick=async()=>{await supabase.auth.signOut();rows=[];showSignIn()};$('search').oninput=render;$('countyFilter').onchange=render;$('showStaff').onchange=render;$('refresh').onclick=load;
+$('signOut').onclick=async()=>{
+ const token=localStorage.getItem(STAFF_TOKEN_KEY)||'';
+ if(token){try{await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','X-Levelup-Staff-Token':token},body:JSON.stringify({action:'staff_logout',staff_token:token})})}catch{}}
+ localStorage.removeItem(STAFF_TOKEN_KEY);await supabase.auth.signOut();rows=[];showSignIn()
+};$('search').oninput=render;$('countyFilter').onchange=render;$('showStaff').onchange=render;$('refresh').onclick=load;
 supabase.auth.onAuthStateChange(()=>load());load();
 </script>
 </body></html>
