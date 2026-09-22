@@ -396,7 +396,7 @@ export const data = {
       "returnTo": 4,
       "spots": [
         [
-          "Missed communication",
+          "1. Missed communication",
           82,
           18,
           14,
@@ -405,7 +405,7 @@ export const data = {
           "missedCommunication"
         ],
         [
-          "Loss of trust",
+          "2. Loss of trust",
           55,
           66,
           10,
@@ -414,7 +414,7 @@ export const data = {
           "lostTrust"
         ],
         [
-          "Recovery decision",
+          "3. Recover professionally",
           74,
           66,
           12,
@@ -551,14 +551,14 @@ export const data = {
     ],
     "punctuality": [
       "Protect Your First Impression",
-      "You arrive ten minutes early, but the supervisor is not ready for you. What is the strongest response?",
+      "You arrive ten minutes early for your restaurant shift, but your supervisor is still helping with opening tasks. What is the strongest response?",
       [
-        "Sit in the lobby scrolling through your phone until someone calls your name",
-        "Greet the front desk, confirm whom you are meeting, and wait attentively",
-        "Leave to run a quick errand and return at the scheduled start time"
+        "Wait near the entrance scrolling through your phone until someone comes to get you",
+        "Check in with the shift lead or available manager, let them know you arrived, and wait attentively",
+        "Leave to run a quick errand and come back at the scheduled start time"
       ],
       1,
-      "Being early is only part of the impression. Professional communication and attentive behavior show that you are ready."
+      "Arriving early is only part of the impression. Checking in professionally and staying ready shows that you are prepared to begin."
     ],
     "missedShiftRecovery": [
       "Recover Professionally",
