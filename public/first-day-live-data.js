@@ -377,7 +377,7 @@ export const data = {
       "media": "media18.mp4",
       "spots": [
         [
-          "Complete your readiness review",
+          "Continue to The First 30",
           74,
           66,
           20,
@@ -442,7 +442,7 @@ export const data = {
       "returnTo": 7,
       "spots": [
         [
-          "First impression",
+          "1. First impression",
           53,
           67,
           11,
@@ -451,7 +451,7 @@ export const data = {
           "firstImpression"
         ],
         [
-          "Loss of trust",
+          "2. Loss of trust",
           64,
           67,
           11,
@@ -460,7 +460,7 @@ export const data = {
           "lateTrust"
         ],
         [
-          "Team impact",
+          "3. Team impact",
           75,
           67,
           11,
@@ -469,7 +469,7 @@ export const data = {
           "teamImpact"
         ],
         [
-          "Harder road",
+          "4. Harder road",
           86,
           67,
           11,
@@ -478,7 +478,7 @@ export const data = {
           "harderRoad"
         ],
         [
-          "Recovery decision",
+          "5. Recover professionally",
           39,
           29,
           22,
@@ -606,14 +606,14 @@ export const data = {
     ],
     "connections": [
       "Professional Connections",
-      "Which response communicates teamwork?",
+      "A coworker tells Alex, “If the register gets slammed later, give me a shout and I can help.” What response best builds a professional connection?",
       [
-        "I have my own work to worry about",
-        "Thanks—please let me know if I can support you too",
-        "I only talk to supervisors"
+        "Thanks—I appreciate it. Let me know if I can help you too.",
+        "I have my own work to worry about.",
+        "I only ask supervisors for help."
       ],
-      1,
-      "Brief, respectful interactions build the trust that makes teamwork easier later."
+      0,
+      "Professional connections grow through small moments of respect and reciprocity. Acknowledge the offer, communicate clearly, and be willing to support teammates too."
     ],
     "rush": [
       "Stay Focused Under Pressure",
