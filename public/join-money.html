@@ -13,10 +13,11 @@
 <main class="wrap"><section class="card hero"><small>MONEY MOVES</small><h1 id="moduleTitle">Stay with your facilitator</h1><p id="moduleIntro">Your device will open when a Money Moves interaction is ready.</p></section><section class="card" style="margin-top:12px"><div id="content"><div class="wait">Connecting to the Money Moves session…</div></div></section><div class="privacy"><b>Your privacy:</b> personal Money Moves entries stay on this device. For private activities, the facilitator sees only completion—not your wage, hours, spending pressures, habits, commitments, or written action.</div></main><div class="footer">Level Up Live • Money Moves</div>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
+import { initFacilitatedIdentity } from './facilitated-identity.js?v=20260922id1';
 const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co',SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
 const $=id=>document.getElementById(id),params=new URLSearchParams(location.search),alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-let room=(params.get('room')||'').toUpperCase().replace(/[^A-Z2-9]/g,'');$('roomCode').textContent=room||'NO ROOM';
+let room=(params.get('room')||'').toUpperCase().replace(/[^A-Z2-9]/g,'');$('roomCode').textContent=room||'NO ROOM';const facilitatedIdentity=room?await initFacilitatedIdentity({room}):null;
 function randomCode(n=12){const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,b=>alphabet[b%alphabet.length]).join('')}
 const clientId='money-'+randomCode(),storageKey='levelup-live-money:'+room;
 let current=null,connected=false,ended=false,saved={};try{saved=JSON.parse(localStorage.getItem(storageKey)||'{}')||{}}catch(_){saved={}}
@@ -24,7 +25,17 @@ const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;'
 function persist(){try{localStorage.setItem(storageKey,JSON.stringify(saved))}catch(_){}}
 const channel=supabase.channel('levelup:facilitator:'+room,{config:{broadcast:{self:true},presence:{key:clientId}}});
 async function safeBroadcast(event,payload){if(!connected||ended)return false;try{await channel.send({type:'broadcast',event,payload});return true}catch{return false}}
-async function sendResponse(questionId,answer,{privateAnswer=false}={}){return safeBroadcast(privateAnswer?'participant_private_complete':'participant_response',privateAnswer?{client_id:clientId,question_id:questionId,at:new Date().toISOString()}:{client_id:clientId,question_id:questionId,answer,at:new Date().toISOString()})}
+async function saveMoneyProgress({activityId=null,complete=false}={}){
+ if(!facilitatedIdentity)return;
+ const scene=current?.scene||{};
+ const journey_state={delivery_mode:'facilitated',room,stage:'money',stage_label:'Money Moves',mode:current?.mode||null,scene:Number(scene.slide)||null,scene_title:scene.title||null,activity_id:activityId||current?.question?.id||null,last_seen_at:new Date().toISOString()};
+ try{await facilitatedIdentity.saveProgress('money-moves',{journey_state,xp:0,is_complete:Boolean(complete)})}catch(err){console.warn('Money Moves progress save deferred',err)}
+}
+async function sendResponse(questionId,answer,{privateAnswer=false}={}){
+ const sent=await safeBroadcast(privateAnswer?'participant_private_complete':'participant_response',privateAnswer?{client_id:clientId,participant_id:facilitatedIdentity?.participant?.id||null,question_id:questionId,at:new Date().toISOString()}:{client_id:clientId,participant_id:facilitatedIdentity?.participant?.id||null,question_id:questionId,answer,at:new Date().toISOString()});
+ if(sent)saveMoneyProgress({activityId:questionId});
+ return sent
+}
 
 function renderMoney(q,box,html){
  const existing=saved[q.id];
@@ -64,10 +75,10 @@ function render(){
  if(current.mode!=='activity'||!current.question){box.innerHTML='<div class="wait">Stay with your facilitator…</div>';return}
  const q=current.question;$('moduleTitle').textContent=q.phase||'Money Moves';$('moduleIntro').textContent='Complete this interaction on your device.';const html='<span class="phase">'+escapeHtml(q.phase||'MONEY MOVES')+'</span><div class="prompt"><h2>'+escapeHtml(q.prompt||'')+'</h2><p>'+escapeHtml(q.help||'')+'</p></div>';renderMoney(q,box,html)
 }
-channel.on('broadcast',{event:'facilitator_state'},({payload})=>{current=payload||null;ended=!!payload?.ended;render()})
+channel.on('broadcast',{event:'facilitator_state'},({payload})=>{current=payload||null;ended=!!payload?.ended;saveMoneyProgress({complete:payload?.mode==='stage_complete'});render()})
  .on('broadcast',{event:'responses_reset'},({payload})=>{if(payload?.question_id){delete saved[payload.question_id];persist()}render()})
  .on('broadcast',{event:'session_ended'},()=>{ended=true;render()})
- .subscribe(async status=>{if(status==='SUBSCRIBED'){connected=true;$('connection').textContent='Live';$('connection').className='pill ok';await channel.track({role:'participant',module:'money',online_at:new Date().toISOString()});await safeBroadcast('participant_hello',{client_id:clientId,module:'money',at:new Date().toISOString()})}else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status)){$('connection').textContent='Disconnected';$('connection').className='pill'}});
+ .subscribe(async status=>{if(status==='SUBSCRIBED'){connected=true;$('connection').textContent='Live';$('connection').className='pill ok';await channel.track({role:'participant',module:'money',participant_id:facilitatedIdentity?.participant?.id||null,online_at:new Date().toISOString()});await safeBroadcast('participant_hello',{client_id:clientId,module:'money',participant_id:facilitatedIdentity?.participant?.id||null,display_name:facilitatedIdentity?.participant?.display_name||null,at:new Date().toISOString()})}else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status)){$('connection').textContent='Disconnected';$('connection').className='pill'}});
 window.addEventListener('beforeunload',()=>{try{channel.untrack();supabase.removeChannel(channel)}catch{}});render();
 </script>
 </body></html>
