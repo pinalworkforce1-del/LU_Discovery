@@ -1,4 +1,4 @@
-const ENGINE_VERSION="1.0.3";
+const ENGINE_VERSION="1.0.4";
 const CACHE_PREFIX="level-up-offline";
 const scopeUrl=new URL(self.registration.scope);
 const scopeKey=scopeUrl.pathname.replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"")||"root";
