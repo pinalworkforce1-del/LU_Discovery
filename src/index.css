@@ -176,6 +176,13 @@ button, input, textarea { font: inherit; }
 .cloud-status svg { width: 18px; height: 18px; }
 .hud-button { color: #c9d7fa !important; }
 .hud-button:hover { color: white !important; background: #10587e3b !important; }
+.city-return-button { width: auto !important; min-width: 38px; padding-inline: .55rem !important; gap: .35rem; white-space: nowrap; }
+.city-return-button svg { width: 16px; height: 16px; }
+.city-return-label { font-size: .68rem; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+@media (max-width: 1100px) {
+  .city-return-label { display: none; }
+  .city-return-button { width: 36px !important; padding-inline: 0 !important; }
+}
 @keyframes cloud-breathe { to { opacity: .45; } }
 
 .game-stage { min-height: 0; display: grid; place-items: center; padding: 0 1rem; }
