@@ -1,0 +1,45 @@
+name: Validate Offline Engine
+
+on:
+  push:
+    branches: ["offline-engine-v1"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build module
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Generate offline manifest
+        run: node scripts/generate-offline-manifest.mjs dist /LU_Discovery/
+      - name: Validate offline package
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("dist")
+          for name in ["index.html","offline-sw.js","offline-client.js","offline-manifest.json"]:
+              if not (root/name).exists():
+                  raise SystemExit("Missing "+name)
+          m=json.loads((root/"offline-manifest.json").read_text())
+          paths=[x["path"] for x in m["files"]]
+          for ext in [".webp",".mp4",".js",".css"]:
+              if not any(p.endswith(ext) for p in paths):
+                  raise SystemExit("Manifest has no "+ext+" assets")
+          if m.get("totalBytes",0) < 15000000:
+              raise SystemExit("Offline package is unexpectedly small")
+          print("Validated",len(paths),"files,",round(m["totalBytes"]/1024/1024,1),"MB")
+          PY

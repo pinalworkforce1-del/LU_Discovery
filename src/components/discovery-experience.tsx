@@ -564,7 +564,13 @@ export function DiscoveryExperience() {
   }, []);
 
   useEffect(() => {
-    if (ready) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(journey));
+    if (!ready) return;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(journey));
+    (window as any).LevelUpOfflineProgress?.save(MODULE_ID, journey, {
+      xp: journey.completed.length * 100,
+      isComplete: journey.completed.length === STAGES.length,
+      completedAt: journey.completionDate || null,
+    });
   }, [journey, ready]);
 
   useEffect(() => {
@@ -807,6 +813,7 @@ export function DiscoveryExperience() {
       await supabase.from("profiles").update({ display_name: nextJourney.name }).eq("user_id", session.user.id);
     }
     setSyncStatus(error ? "error" : "saved");
+    if (!error) (window as any).LevelUpOfflineProgress?.markSynced(MODULE_ID);
     if (error && !quiet) toast.error("Cloud save paused. Progress remains saved on this device.");
   }
 

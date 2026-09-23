@@ -78,6 +78,9 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Generate offline manifest
+        run: node scripts/generate-offline-manifest.mjs dist /LU_Discovery/
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
