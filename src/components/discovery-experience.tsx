@@ -104,7 +104,8 @@ type SavedJourney = {
   exploredVisuals: Record<number, string[]>;
 };
 
-const STORAGE_KEY = "level-up-discovery-pilot-v3";
+const STORAGE_KEY_BASE = "level-up-discovery-pilot-v4";
+const storageKeyFor = (userId: string) => `${STORAGE_KEY_BASE}:${userId}`;
 const MODULE_ID = "discovery";
 const hotspot = (left: string, top: string, width: string, height: string): Hotspot => ({ left, top, width, height });
 const asset = (slide: number, type: "image" | "video") =>
@@ -537,8 +538,10 @@ export function DiscoveryExperience() {
   }, []);
 
   useEffect(() => {
+    if (!authReady || !session) return;
+    const key = storageKeyFor(session.user.id);
     const frame = window.requestAnimationFrame(() => {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
+      const saved = window.localStorage.getItem(key);
       if (saved) {
         try {
           const parsed = JSON.parse(saved) as SavedJourney;
@@ -552,20 +555,20 @@ export function DiscoveryExperience() {
             exploredVisuals: parsed.exploredVisuals ?? {},
             scene: Math.min(parsed.scene ?? 0, SCENES.length - 1),
           });
-          setDraftName(parsed.name ?? "");
-          setStarted(Boolean(parsed.name));
         } catch {
-          window.localStorage.removeItem(STORAGE_KEY);
+          window.localStorage.removeItem(key);
         }
+      } else {
+        setJourney(DEFAULT_JOURNEY);
       }
       setReady(true);
     });
     return () => window.cancelAnimationFrame(frame);
-  }, []);
+  }, [authReady, session?.user.id]);
 
   useEffect(() => {
-    if (!ready) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(journey));
+    if (!ready || !session) return;
+    window.localStorage.setItem(storageKeyFor(session.user.id), JSON.stringify(journey));
     (window as any).LevelUpOfflineProgress?.save(MODULE_ID, journey, {
       xp: journey.completed.length * 100,
       isComplete: journey.completed.length === STAGES.length,
@@ -577,40 +580,53 @@ export function DiscoveryExperience() {
     if (!ready || !authReady || !session || !supabase) return;
     let active = true;
     setCloudReady(false);
-    supabase
-      .from("module_progress")
-      .select("journey_state")
-      .eq("user_id", session.user.id)
-      .eq("module_id", MODULE_ID)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (error) {
-          setSyncStatus("error");
-          toast.error("Cloud progress could not be loaded. Device progress is still available.");
-        } else if (data?.journey_state) {
-          const remote = data.journey_state as unknown as SavedJourney;
-          const normalizedRemote = {
-            ...DEFAULT_JOURNEY,
-            ...remote,
-            exploredStrengths: remote.exploredStrengths ?? [],
-            strengthLensResponses: remote.strengthLensResponses ?? {},
-            explorationSelections: remote.explorationSelections ?? {},
-            completionDate: remote.completionDate ?? "",
-            exploredVisuals: remote.exploredVisuals ?? {},
-            scene: Math.min(remote.scene ?? 0, SCENES.length - 1),
-          };
-          const localIsFurther =
-            journey.completed.length > normalizedRemote.completed.length ||
-            (journey.completed.length === normalizedRemote.completed.length && journey.scene > normalizedRemote.scene);
-          const merged = localIsFurther ? journey : normalizedRemote;
-          setJourney(merged);
-          setDraftName(merged.name);
-          setStarted(Boolean(merged.name));
-          setSyncStatus("saved");
-        }
+    Promise.all([
+      supabase.from("module_progress")
+        .select("journey_state")
+        .eq("user_id", session.user.id)
+        .eq("module_id", MODULE_ID)
+        .maybeSingle(),
+      supabase.from("profiles")
+        .select("display_name")
+        .eq("user_id", session.user.id)
+        .maybeSingle(),
+    ]).then(([progress, profile]) => {
+      if (!active) return;
+      if (progress.error || profile.error) {
+        setSyncStatus("error");
+        toast.error("Cloud progress could not be loaded. Device progress is still available.");
         setCloudReady(true);
-      });
+        return;
+      }
+
+      const canonicalName = (profile.data?.display_name || "").trim();
+      let merged = journey;
+
+      if (progress.data?.journey_state) {
+        const remote = progress.data.journey_state as unknown as SavedJourney;
+        const normalizedRemote = {
+          ...DEFAULT_JOURNEY,
+          ...remote,
+          exploredStrengths: remote.exploredStrengths ?? [],
+          strengthLensResponses: remote.strengthLensResponses ?? {},
+          explorationSelections: remote.explorationSelections ?? {},
+          completionDate: remote.completionDate ?? "",
+          exploredVisuals: remote.exploredVisuals ?? {},
+          scene: Math.min(remote.scene ?? 0, SCENES.length - 1),
+        };
+        const localIsFurther =
+          journey.completed.length > normalizedRemote.completed.length ||
+          (journey.completed.length === normalizedRemote.completed.length && journey.scene > normalizedRemote.scene);
+        merged = localIsFurther ? journey : normalizedRemote;
+      }
+
+      if (canonicalName) merged = { ...merged, name: canonicalName };
+      setJourney(merged);
+      setDraftName(canonicalName);
+      setStarted(Boolean(canonicalName));
+      setSyncStatus("saved");
+      setCloudReady(true);
+    });
     return () => { active = false; };
   }, [ready, authReady, session?.user.id]);
 
@@ -809,9 +825,6 @@ export function DiscoveryExperience() {
       is_complete: nextJourney.completed.length === STAGES.length,
       completed_at: nextJourney.completionDate || null,
     }, { onConflict: "user_id,module_id" });
-    if (!error && nextJourney.name) {
-      await supabase.from("profiles").update({ display_name: nextJourney.name }).eq("user_id", session.user.id);
-    }
     setSyncStatus(error ? "error" : "saved");
     if (!error) (window as any).LevelUpOfflineProgress?.markSynced(MODULE_ID);
     if (error && !quiet) toast.error("Cloud save paused. Progress remains saved on this device.");
