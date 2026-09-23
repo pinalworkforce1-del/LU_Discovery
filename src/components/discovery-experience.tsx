@@ -107,6 +107,7 @@ type SavedJourney = {
 const STORAGE_KEY_BASE = "level-up-discovery-pilot-v4";
 const storageKeyFor = (userId: string) => `${STORAGE_KEY_BASE}:${userId}`;
 const MODULE_ID = "discovery";
+const profileNameKey = (userId: string) => `level-up-profile-name-v1:${userId}`;
 const hotspot = (left: string, top: string, width: string, height: string): Hotspot => ({ left, top, width, height });
 const asset = (slide: number, type: "image" | "video") =>
   `${import.meta.env.BASE_URL}assets/discovery/scenes/${type === "image" ? "slide" : "narration"}-${String(slide).padStart(2, "0")}.${type === "image" ? "webp" : "mp4"}`;
@@ -542,12 +543,15 @@ export function DiscoveryExperience() {
     const key = storageKeyFor(session.user.id);
     const frame = window.requestAnimationFrame(() => {
       const saved = window.localStorage.getItem(key);
+      const cachedName = (window.localStorage.getItem(profileNameKey(session.user.id)) || "").trim();
       if (saved) {
         try {
           const parsed = JSON.parse(saved) as SavedJourney;
+          const localName = cachedName || (parsed.name || "").trim();
           setJourney({
             ...DEFAULT_JOURNEY,
             ...parsed,
+            name: localName,
             exploredStrengths: parsed.exploredStrengths ?? [],
             strengthLensResponses: parsed.strengthLensResponses ?? {},
             explorationSelections: parsed.explorationSelections ?? {},
@@ -555,11 +559,18 @@ export function DiscoveryExperience() {
             exploredVisuals: parsed.exploredVisuals ?? {},
             scene: Math.min(parsed.scene ?? 0, SCENES.length - 1),
           });
+          setDraftName(localName);
+          setStarted(Boolean(localName));
         } catch {
           window.localStorage.removeItem(key);
+          setJourney(cachedName ? { ...DEFAULT_JOURNEY, name: cachedName } : DEFAULT_JOURNEY);
+          setDraftName(cachedName);
+          setStarted(Boolean(cachedName));
         }
       } else {
-        setJourney(DEFAULT_JOURNEY);
+        setJourney(cachedName ? { ...DEFAULT_JOURNEY, name: cachedName } : DEFAULT_JOURNEY);
+        setDraftName(cachedName);
+        setStarted(Boolean(cachedName));
       }
       setReady(true);
     });
@@ -600,6 +611,7 @@ export function DiscoveryExperience() {
       }
 
       const canonicalName = (profile.data?.display_name || "").trim();
+      if (canonicalName) window.localStorage.setItem(profileNameKey(session.user.id), canonicalName);
       let merged = journey;
 
       if (progress.data?.journey_state) {
