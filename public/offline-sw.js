@@ -1,4 +1,4 @@
-const ENGINE_VERSION="1.0.2";
+const ENGINE_VERSION="1.0.3";
 const CACHE_PREFIX="level-up-offline";
 const scopeUrl=new URL(self.registration.scope);
 const scopeKey=scopeUrl.pathname.replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"")||"root";
@@ -106,6 +106,13 @@ async function prepareOffline(){
   const manifest=await mr.json(),files=Array.isArray(manifest.files)?manifest.files:[];
   const cache=await caches.open(CACHE_NAME);
   let completed=0,total=0; const failures=[];
+  total++;
+  try{
+    const rootResponse=await fetch(self.registration.scope,{cache:"reload"});
+    if(!cacheable(rootResponse))throw new Error("HTTP "+rootResponse.status);
+    await cache.put(self.registration.scope,rootResponse.clone());
+    completed++;
+  }catch(error){failures.push({path:"./",error:String(error?.message||error)})}
   for(const entry of files){
     const raw=typeof entry==="string"?entry:entry.path;
     if(!raw)continue; total++;
