@@ -882,6 +882,16 @@ export function DiscoveryExperience() {
           <Progress value={percent} aria-label={`${percent}% complete`} />
         </div>
         <div className="topbar-actions">
+          <Button
+            className="hud-button city-return-button"
+            variant="ghost"
+            onClick={() => window.location.assign("https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery")}
+            aria-label="Back to Opportunity City"
+            title="Back to Opportunity City"
+          >
+            <ArrowLeft />
+            <span className="city-return-label">Opportunity City</span>
+          </Button>
           {session ? <span className={`cloud-status ${syncStatus}`} title={syncStatus === "saved" ? "Progress saved to Level Up" : syncStatus === "saving" ? "Saving progress" : "Progress is saved on this device"}>{syncStatus === "error" ? <CloudOff /> : <Cloud />}</span> : null}
           {started ? <Button className="hud-button" variant="ghost" size="icon" onClick={() => setCoachSummaryOpen(true)} aria-label="Open Discovery Coach Snapshot"><ClipboardList /></Button> : null}
           <Button className="hud-button" variant="ghost" size="icon" onClick={() => setAccessibilityOpen(true)} aria-label="Open accessibility and scene description"><Accessibility /></Button>
