@@ -1,9 +1,27 @@
 (() => {
-  const KEY = "level-up-offline-progress-v1";
+  const BASE_KEY = "level-up-offline-progress-v2";
+  const SUPABASE_TOKEN_KEY = "sb-dnijrzotfyvmmnmueknk-auth-token";
+
+  function currentUserId() {
+    try {
+      const raw = localStorage.getItem(SUPABASE_TOKEN_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const session = parsed?.currentSession || parsed;
+      return session?.user?.id || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function storageKey() {
+    const userId = currentUserId();
+    return userId ? BASE_KEY + ":" + userId : BASE_KEY + ":anonymous";
+  }
 
   function read() {
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(storageKey());
       const parsed = raw ? JSON.parse(raw) : {};
       return parsed && typeof parsed === "object" ? parsed : {};
     } catch (_) {
@@ -12,7 +30,7 @@
   }
 
   function write(data) {
-    localStorage.setItem(KEY, JSON.stringify(data));
+    localStorage.setItem(storageKey(), JSON.stringify(data));
     window.dispatchEvent(new CustomEvent("level-up-offline-progress", { detail: data }));
   }
 
@@ -30,6 +48,7 @@
       updated_at: options.updatedAt || now,
       pending: options.pending !== false,
       last_synced_at: previous.last_synced_at || null,
+      user_id: currentUserId(),
     };
     all[moduleId] = row;
     write(all);
@@ -53,13 +72,19 @@
     write(all);
   }
 
-  function get(moduleId) {
-    return read()[moduleId] || null;
-  }
+  function get(moduleId) { return read()[moduleId] || null; }
+  function list() { return Object.values(read()); }
 
-  function list() {
-    return Object.values(read());
-  }
-
-  window.LevelUpOfflineProgress = { key: KEY, read, save, markSynced, remove, get, list };
+  window.LevelUpOfflineProgress = {
+    baseKey: BASE_KEY,
+    key: storageKey(),
+    currentUserId,
+    storageKey,
+    read,
+    save,
+    markSynced,
+    remove,
+    get,
+    list
+  };
 })();
