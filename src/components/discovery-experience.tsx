@@ -490,6 +490,10 @@ const DEFAULT_JOURNEY: SavedJourney = {
   exploredVisuals: {},
 };
 
+function xpForJourney(value: Pick<SavedJourney, "completed" | "exploredStrengths">) {
+  return (value.completed.length + value.exploredStrengths.length) * 100;
+}
+
 export function DiscoveryExperience() {
   const [journey, setJourney] = useState<SavedJourney>(DEFAULT_JOURNEY);
   const [ready, setReady] = useState(false);
@@ -583,7 +587,7 @@ export function DiscoveryExperience() {
     if (!ready || !session) return;
     window.localStorage.setItem(storageKeyFor(session.user.id), JSON.stringify(journey));
     (window as any).LevelUpOfflineProgress?.save(MODULE_ID, journey, {
-      xp: journey.completed.length * 100,
+      xp: xpForJourney(journey),
       isComplete: journey.completed.length === STAGES.length,
       completedAt: journey.completionDate || null,
     });
@@ -682,7 +686,7 @@ export function DiscoveryExperience() {
   const activity = scene.activity ? ACTIVITIES.find((item) => item.id === scene.activity)! : null;
   const stage = activity;
   const currentPhase = scene.phase === "map" ? null : STAGES.find((item) => item.id === scene.phase)!;
-  const xp = journey.completed.length * 100;
+  const xp = xpForJourney(journey);
   const percent = journey.completed.length * 20;
   const allComplete = journey.completed.length === STAGES.length;
   const controlsVisible = started && narrationDone;
@@ -754,9 +758,13 @@ export function DiscoveryExperience() {
   }
 
   function markStrengthExplored(id: string) {
+    if (journey.exploredStrengths.includes(id)) return;
     setJourney((current) => {
       if (current.exploredStrengths.includes(id)) return current;
       return { ...current, exploredStrengths: [...current.exploredStrengths, id] };
+    });
+    toast.success("+100 XP — Strength explored", {
+      icon: <Sparkles className="size-4 text-cyan-300" />,
     });
   }
 
@@ -845,7 +853,7 @@ export function DiscoveryExperience() {
       user_id: session.user.id,
       module_id: MODULE_ID,
       journey_state: nextJourney,
-      xp: nextJourney.completed.length * 100,
+      xp: xpForJourney(nextJourney),
       is_complete: nextJourney.completed.length === STAGES.length,
       completed_at: nextJourney.completionDate || null,
     }, { onConflict: "user_id,module_id" });
@@ -949,7 +957,7 @@ export function DiscoveryExperience() {
               <p className="eyebrow">YOUR STORY STARTS HERE</p>
               <h1>What makes you, you?</h1>
               <p>Discover the strengths, values, purpose, and support that can shape your next move.</p>
-              <p className="xp-intro">XP tracks your progress through major activities. It is not a score, and there are no “right” answers.</p>
+              <p className="xp-intro">XP means Experience Points. It tracks your progress through activities and interactions marked +100 XP—it is not a score, and there are no “right” answers.</p>
               <label htmlFor="first-name">What should we call you?</label>
               <div className="name-row">
                 <input id="first-name" value={draftName} onChange={(event) => setDraftName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && startJourney()} placeholder="First name" autoComplete="given-name" />
@@ -1013,7 +1021,7 @@ export function DiscoveryExperience() {
           ) : null}
 
           {controlsVisible && scene.phase === "map" ? (
-            <JourneyMap name={journey.name} onCertificate={() => setCertificateOpen(true)} onSummary={() => setCoachSummaryOpen(true)} onReview={() => goToScene(0, false)} />
+            <JourneyMap name={journey.name} xp={xp} onCertificate={() => setCertificateOpen(true)} onSummary={() => setCoachSummaryOpen(true)} onReview={() => goToScene(0, false)} />
           ) : null}
 
           {controlsVisible ? <PersonalizedMoment scene={scene.slide} journey={journey} offset={Boolean(sceneExplorer)} /> : null}
@@ -1078,7 +1086,7 @@ export function DiscoveryExperience() {
           </div>
           <div className="xp-help">
             <Sparkles />
-            <div><strong>What is XP?</strong><p><b>XP means Experience Points.</b> In Level Up, XP is a progress marker. You earn 100 XP when you complete each major Discovery reflection. Optional exploration does not add XP, and your answers are never scored as right or wrong.</p></div>
+            <div><strong>What is XP?</strong><p><b>XP means Experience Points.</b> In Level Up, XP is a progress marker. You earn 100 XP when you complete each major Discovery reflection and 100 XP the first time you explore each Strength Lens example marked +100 XP. Reopening an example does not add more XP, and your answers are never scored as right or wrong.</p></div>
           </div>
           <DialogFooter><Button onClick={() => setHelpOpen(false)}>Got it</Button></DialogFooter>
         </DialogContent>
@@ -1528,7 +1536,7 @@ function CoachSummaryDialog({ open, onOpenChange, journey }: { open: boolean; on
       <DialogContent className="coach-summary-dialog">
         <DialogHeader className="coach-summary-header">
           <div><p className="activity-kicker">LEVEL UP • DISCOVERY</p><DialogTitle>Discovery Coach Snapshot</DialogTitle><DialogDescription>A participant-owned conversation guide for reviewing discoveries, connections, and next steps.</DialogDescription></div>
-          <div className="summary-identity"><strong>{journey.name || "Participant"}</strong><span>{complete ? "Discovery complete" : `${journey.completed.length} of ${STAGES.length} activities complete`} • {journey.completed.length * 100} XP</span><span>{date}</span></div>
+          <div className="summary-identity"><strong>{journey.name || "Participant"}</strong><span>{complete ? "Discovery complete" : `${journey.completed.length} of ${STAGES.length} activities complete`} • {xpForJourney(journey)} XP</span><span>{date}</span></div>
         </DialogHeader>
 
         <section className="alignment-summary"><span><Sparkles /> ALIGNMENT SNAPSHOT</span><p>{alignment}</p>{support ? <p><strong>Support priority:</strong> {support}</p> : null}</section>
@@ -1558,12 +1566,12 @@ function CoachSummaryDialog({ open, onOpenChange, journey }: { open: boolean; on
   );
 }
 
-function JourneyMap({ name, onCertificate, onSummary, onReview }: { name: string; onCertificate: () => void; onSummary: () => void; onReview: () => void }) {
+function JourneyMap({ name, xp, onCertificate, onSummary, onReview }: { name: string; xp: number; onCertificate: () => void; onSummary: () => void; onReview: () => void }) {
   return (
     <div className="map-view">
       <div className="map-complete-card">
         <div className="completion-icon"><Trophy /></div>
-        <p>500 XP • DISCOVERY COMPLETE</p>
+        <p>{xp} XP • DISCOVERY COMPLETE</p>
         <h1>Way to level up, {name}.</h1>
         <span>Resume District is now unlocked.</span>
         <a className="journey-continue-cta" href="https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery">Continue to Opportunity City → Resume District</a>
