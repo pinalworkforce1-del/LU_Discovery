@@ -997,7 +997,7 @@ export function DiscoveryExperience() {
 
           {controlsVisible && scene.phase !== "map" ? <LiveHud completed={journey.completed} xp={xp} /> : null}
 
-          {controlsVisible && journey.scene > 0 && scene.phase !== "map" ? (
+          {started && journey.scene > 0 && scene.phase !== "map" ? (
             <button className="scene-previous" onClick={() => goToScene(journey.scene - 1, false)} aria-label="Go to previous scene"><ArrowLeft /> Previous</button>
           ) : null}
 
