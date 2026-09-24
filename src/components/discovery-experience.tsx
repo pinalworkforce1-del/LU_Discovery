@@ -1078,7 +1078,7 @@ export function DiscoveryExperience() {
           </div>
           <div className="xp-help">
             <Sparkles />
-            <div><strong>What is XP?</strong><p>XP is a progress marker. You earn 100 XP when you complete each major Discovery reflection. Optional exploration does not add XP, and your answers are never scored as right or wrong.</p></div>
+            <div><strong>What is XP?</strong><p><b>XP means Experience Points.</b> In Level Up, XP is a progress marker. You earn 100 XP when you complete each major Discovery reflection. Optional exploration does not add XP, and your answers are never scored as right or wrong.</p></div>
           </div>
           <DialogFooter><Button onClick={() => setHelpOpen(false)}>Got it</Button></DialogFooter>
         </DialogContent>
