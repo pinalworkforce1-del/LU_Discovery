@@ -6,6 +6,7 @@ function hudButton(pattern: RegExp) {
 }
 function video(){return document.querySelector<HTMLVideoElement>(".scene-frame .caption-video")}
 function originalContinue(){return document.querySelector<HTMLButtonElement>(".scene-frame .scene-continue, .scene-frame .next-level-button")}
+function originalPrevious(){return document.querySelector<HTMLButtonElement>(".scene-frame .scene-previous")}
 function fallbackPlay(){return document.querySelector<HTMLButtonElement>(".scene-frame .resume-narration")}
 function fallbackSkip(){return document.querySelector<HTMLButtonElement>(".scene-frame .skip-narration")}
 function accessibilityButton(){return hudButton(/Open accessibility/i)}
@@ -18,12 +19,14 @@ function makeRail(){
   rail.className="level-up-scene-rail";
   rail.setAttribute("aria-label","Scene controls");
   rail.innerHTML=`<small>SCENE CONTROLS</small>
+    <button type="button" data-lu="previous"><span class="control-icon">←</span><span class="control-label">Previous scene</span></button>
     <button type="button" data-lu="audio"><span class="control-icon">🔊</span><span class="control-label">Audio on</span></button>
     <button type="button" data-lu="access"><span class="control-icon">◉</span><span class="control-label">Accessibility</span></button>
     <button type="button" data-lu="replay"><span class="control-icon">↻</span><span class="control-label">Replay narration</span></button>
     <button type="button" data-lu="skip"><span class="control-icon">↠</span><span class="control-label">Skip narration</span></button>
     <button type="button" data-lu="play"><span class="control-icon">▶</span><span class="control-label">Play narration</span></button>
     <button type="button" class="rail-continue" data-lu="continue">Continue <span>→</span></button>`;
+  rail.querySelector<HTMLButtonElement>('[data-lu="previous"]')!.onclick=()=>{originalPrevious()?.click();queue()};
   rail.querySelector<HTMLButtonElement>('[data-lu="audio"]')!.onclick=()=>{hudButton(/Mute narration|Turn on narration/i)?.click();queue()};
   rail.querySelector<HTMLButtonElement>('[data-lu="access"]')!.onclick=()=>{accessibilityButton()?.click();queue()};
   rail.querySelector<HTMLButtonElement>('[data-lu="play"]')!.onclick=()=>{
@@ -58,6 +61,7 @@ function refresh(){
   bind(v);
   const has=!!v;
   const atStart=!!startPanel();
+  const previous=rail.querySelector<HTMLButtonElement>('[data-lu="previous"]')!;
   const audio=rail.querySelector<HTMLButtonElement>('[data-lu="audio"]')!;
   const access=rail.querySelector<HTMLButtonElement>('[data-lu="access"]')!;
   const play=rail.querySelector<HTMLButtonElement>('[data-lu="play"]')!;
@@ -65,6 +69,9 @@ function refresh(){
   const skip=rail.querySelector<HTMLButtonElement>('[data-lu="skip"]')!;
   const next=rail.querySelector<HTMLButtonElement>('[data-lu="continue"]')!;
 
+  const previousSource=originalPrevious();
+  previous.hidden=!previousSource;
+  previous.disabled=!previousSource;
   audio.disabled=!has;
   audio.querySelector<HTMLElement>(".control-icon")!.textContent=v?.muted?"🔇":"🔊";
   audio.querySelector<HTMLElement>(".control-label")!.textContent=v?.muted?"Audio off":"Audio on";
