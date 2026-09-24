@@ -570,7 +570,7 @@ button, input, textarea { font: inherit; }
   position:absolute;
   z-index:16;
   left:1rem;
-  bottom:1rem;
+  bottom:12.5%;
   min-height:40px;
   padding:.55rem .8rem;
   display:inline-flex;
@@ -705,7 +705,7 @@ button, input, textarea { font: inherit; }
 @media(max-width:820px){
   .controls-help-button span{display:none}
   .controls-help-button{width:36px!important;padding-inline:0!important}
-  .scene-previous{left:.45rem;bottom:.45rem;min-height:34px;padding:.4rem .55rem;font-size:.68rem}
+  .scene-previous{left:.45rem;bottom:13%;min-height:34px;padding:.4rem .55rem;font-size:.68rem}
   .scene-guidance-note{left:.45rem;top:.45rem;max-width:72%;font-size:.65rem;padding:.4rem .5rem}
   .controls-help-grid{grid-template-columns:1fr}
   .journey-continue-cta{font-size:.75rem;min-height:42px}
