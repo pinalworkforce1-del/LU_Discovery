@@ -8,6 +8,7 @@ import {
   Cloud,
   CloudOff,
   ChevronRight,
+  CircleHelp,
   Eye,
   ExternalLink,
   ImageIcon,
@@ -138,7 +139,7 @@ const ACTIVITIES: Activity[] = [
     questions: [
       { id: "most_like_me", prompt: "Which of these feels most like you?", type: "multi", options: STRENGTH_OPTIONS, max: 3, allowOther: true },
       { id: "proudest_strength", prompt: "Which strength are you most proud of?", type: "single", options: STRENGTH_OPTIONS, required: true, allowOther: true },
-      { id: "strength_setting", prompt: "When have you used this strength?", type: "single", required: true, options: ["At school", "At work", "At home", "Playing sports", "Helping family", "Volunteering", "With friends", "In another situation"] },
+      { id: "strength_setting", prompt: "Where have you used this strength? Choose all that apply.", type: "multi", required: true, options: ["At school", "At work", "At home", "Playing sports", "Helping family", "Volunteering", "With friends", "In another situation"] },
       { id: "strength_story", prompt: "Tell us about that moment.", type: "text", required: true, long: true },
       { id: "growth_skill", prompt: "Which skill would you like to grow even more?", type: "single", required: true, options: ["Communication", "Leadership", "Problem Solving", "Teamwork", "Organization", "Creativity", "Confidence", "Adaptability", "Time Management", "Helping Others", "Technical Skills", "Learning New Things"] },
     ],
@@ -498,6 +499,7 @@ export function DiscoveryExperience() {
   const [coachSummaryOpen, setCoachSummaryOpen] = useState(false);
   const [strengthLensOpen, setStrengthLensOpen] = useState(false);
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [activeVisualId, setActiveVisualId] = useState("");
   const [strengthLensMode, setStrengthLensMode] = useState<"list" | "front" | "back">("list");
@@ -899,7 +901,7 @@ export function DiscoveryExperience() {
           <div className="progress-copy">
             <span>{scene.phase === "map" ? "Discovery complete" : currentPhase?.label}</span>
             <span className="scene-counter">Scene {scene.slide} of 22</span>
-            <strong>{xp} XP</strong>
+            <strong title="XP tracks completed major activities. It is not a score.">{xp} XP</strong>
           </div>
           <Progress value={percent} aria-label={`${percent}% complete`} />
         </div>
@@ -916,6 +918,7 @@ export function DiscoveryExperience() {
           </Button>
           {session ? <span className={`cloud-status ${syncStatus}`} title={syncStatus === "saved" ? "Progress saved to Level Up" : syncStatus === "saving" ? "Saving progress" : "Progress is saved on this device"}>{syncStatus === "error" ? <CloudOff /> : <Cloud />}</span> : null}
           {started ? <Button className="hud-button" variant="ghost" size="icon" onClick={() => setCoachSummaryOpen(true)} aria-label="Open Discovery Coach Snapshot"><ClipboardList /></Button> : null}
+          <Button className="hud-button controls-help-button" variant="ghost" onClick={() => setHelpOpen(true)} aria-label="Open controls and XP guide" title="Controls and XP guide"><CircleHelp /><span>Help</span></Button>
           <Button className="hud-button" variant="ghost" size="icon" onClick={() => setAccessibilityOpen(true)} aria-label="Open accessibility and scene description"><Accessibility /></Button>
           <Button className="hud-button" variant="ghost" size="icon" onClick={togglePlayback} aria-label={playing ? "Pause narration" : "Play narration"}>{playing ? <Pause /> : <Play />}</Button>
           <Button className="hud-button" variant="ghost" size="icon" onClick={toggleAudio} aria-label={journey.audioOn ? "Mute narration" : "Turn on narration"}>{journey.audioOn ? <Volume2 /> : <VolumeX />}</Button>
@@ -932,7 +935,7 @@ export function DiscoveryExperience() {
             ref={videoRef}
             className={`caption-video ${playing ? "is-playing" : ""}`}
             playsInline
-            preload="metadata"
+            preload="auto"
             muted={!journey.audioOn}
             onPlay={() => { setPlaying(true); setNarrationStarted(true); setNarrationDone(false); }}
             onPause={() => setPlaying(false)}
@@ -946,6 +949,7 @@ export function DiscoveryExperience() {
               <p className="eyebrow">YOUR STORY STARTS HERE</p>
               <h1>What makes you, you?</h1>
               <p>Discover the strengths, values, purpose, and support that can shape your next move.</p>
+              <p className="xp-intro">XP tracks your progress through major activities. It is not a score, and there are no “right” answers.</p>
               <label htmlFor="first-name">What should we call you?</label>
               <div className="name-row">
                 <input id="first-name" value={draftName} onChange={(event) => setDraftName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && startJourney()} placeholder="First name" autoComplete="given-name" />
@@ -978,7 +982,11 @@ export function DiscoveryExperience() {
             </a>
           ) : null}
 
-          {controlsVisible && sceneExplorer ? sceneExplorer.visualItems ? <VisualLensOverlay slide={scene.slide} items={sceneExplorer.visualItems} explored={journey.exploredVisuals[scene.slide] ?? []} onOpen={openVisualLens} onOpenList={() => { setActiveVisualId(""); setExplorerOpen(true); }} /> : <button className="scene-explorer-button" onClick={() => setExplorerOpen(true)}><Eye /> Look closer</button> : null}
+          {controlsVisible && sceneExplorer ? sceneExplorer.visualItems ? <VisualLensOverlay slide={scene.slide} items={sceneExplorer.visualItems} explored={journey.exploredVisuals[scene.slide] ?? []} onOpen={openVisualLens} onOpenList={() => { setActiveVisualId(""); setExplorerOpen(true); }} /> : <button className="scene-explorer-button" onClick={() => setExplorerOpen(true)}><Eye /> {scene.slide === 16 ? "Open Discovery Backpack" : scene.slide === 20 ? "Open Next-Step Builder" : "Look closer"}</button> : null}
+
+          {controlsVisible && scene.slide === 8 ? (
+            <div className="scene-guidance-note" role="note">The blue symbols are visual clues, not hidden buttons. Use them to think about what matters to you, then continue.</div>
+          ) : null}
 
           {controlsVisible && stage && scene.activityHotspot ? (
             <button className={`world-hotspot ${activityComplete ? "is-complete" : ""}`} style={scene.activityHotspot} onClick={() => setActivityOpen(true)} aria-label={`${activityComplete ? "Review" : "Open"} ${stage.prompt}`}>
@@ -988,6 +996,10 @@ export function DiscoveryExperience() {
           ) : null}
 
           {controlsVisible && scene.phase !== "map" ? <LiveHud completed={journey.completed} xp={xp} /> : null}
+
+          {controlsVisible && journey.scene > 0 && scene.phase !== "map" ? (
+            <button className="scene-previous" onClick={() => goToScene(journey.scene - 1, false)} aria-label="Go to previous scene"><ArrowLeft /> Previous</button>
+          ) : null}
 
           {controlsVisible && scene.phase !== "map" ? (
             scene.nextGraphic ? (
@@ -1008,6 +1020,7 @@ export function DiscoveryExperience() {
         </div>
       </section>
 
+      {scene.phase !== "map" ? (
       <nav className="stage-nav" aria-label="Discovery levels">
         {STAGES.map((item, index) => {
           const complete = journey.completed.includes(item.id);
@@ -1023,6 +1036,7 @@ export function DiscoveryExperience() {
           <span>{allComplete ? <Map /> : <LockKeyhole />}</span>Journey Map
         </button>
       </nav>
+      ) : null}
 
       {stage ? (
         <ActivityDialog key={`${stage.id}-${activityOpen}`} open={activityOpen} onOpenChange={setActivityOpen} stage={stage} initial={journey.answers[stage.id]} explorationThemes={explorationThemesFor(stage.id, journey.explorationSelections)} onSave={saveActivity} />
@@ -1047,6 +1061,28 @@ export function DiscoveryExperience() {
         journey={journey}
         onUpdate={(updates) => setJourney((current) => ({ ...current, ...updates }))}
       />
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent className="controls-help-dialog">
+          <DialogHeader>
+            <p className="activity-kicker">DISCOVERY • QUICK GUIDE</p>
+            <DialogTitle>What do these controls mean?</DialogTitle>
+            <DialogDescription>You can come back to this guide at any time by selecting Help.</DialogDescription>
+          </DialogHeader>
+          <div className="controls-help-grid">
+            <article><ArrowLeft /><div><strong>Previous</strong><span>Go back one scene without losing your work.</span></div></article>
+            <article><Play /><div><strong>Play / Pause</strong><span>Start or pause scene narration.</span></div></article>
+            <article><Volume2 /><div><strong>Sound</strong><span>Turn narration audio on or off.</span></div></article>
+            <article><Accessibility /><div><strong>Accessibility</strong><span>Adjust narration speed, captions, text, and motion.</span></div></article>
+            <article><ClipboardList /><div><strong>Coach Snapshot</strong><span>Review the discoveries you have captured so far.</span></div></article>
+            <article><RotateCcw /><div><strong>Restart</strong><span>Clears Discovery only after you confirm that you want to restart.</span></div></article>
+          </div>
+          <div className="xp-help">
+            <Sparkles />
+            <div><strong>What is XP?</strong><p>XP is a progress marker. You earn 100 XP when you complete each major Discovery reflection. Optional exploration does not add XP, and your answers are never scored as right or wrong.</p></div>
+          </div>
+          <DialogFooter><Button onClick={() => setHelpOpen(false)}>Got it</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
       {sceneExplorer ? <SceneExplorerDialog key={`${scene.slide}-${activeVisualId}`} open={explorerOpen} onOpenChange={setExplorerOpen} explorer={sceneExplorer} activeVisualId={activeVisualId} selected={journey.explorationSelections[scene.slide] ?? []} onChange={(selected) => setJourney((current) => ({ ...current, explorationSelections: { ...current.explorationSelections, [scene.slide]: selected } }))} onExplore={(id) => markVisualExplored(scene.slide, id)} /> : null}
 
       <Dialog open={certificateOpen} onOpenChange={setCertificateOpen}>
@@ -1151,7 +1187,7 @@ function StrengthLensDialog({ open, onOpenChange, mode, setMode, active, explore
   onMove: (direction: -1 | 1) => void;
 }) {
   const activeIndex = STRENGTH_LENS.findIndex((item) => item.id === active.id);
-  const reflections = ["Yes — this feels like me", "Maybe — I'm still figuring it out", "Not yet — I want to explore it"];
+  const reflections = ["Yes — this feels like me", "Sometimes — it depends on the situation", "Not yet — I haven't had much opportunity to use it", "No — this doesn't really feel like me"];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1343,7 +1379,7 @@ function LiveHud({ completed, xp }: { completed: StageId[]; xp: number }) {
       <div className="hud-levels">
         {STAGES.map((item) => <span key={item.id} className={completed.includes(item.id) ? "done" : ""}>{item.label}<i>{completed.includes(item.id) ? <Check /> : null}</i></span>)}
       </div>
-      <b>XP {xp}</b>
+      <b title="XP tracks completed major activities. It is not a score.">XP {xp}</b>
     </div>
   );
 }
@@ -1365,7 +1401,7 @@ function ActivityDialog({ open, onOpenChange, stage, initial, explorationThemes,
       setDraft((current) => ({ ...current, [question.id]: current[question.id] === option ? "" : option }));
       return;
     }
-    const current = Array.isArray(draft[question.id]) ? draft[question.id] as string[] : [];
+    const current = Array.isArray(draft[question.id]) ? draft[question.id] as string[] : typeof draft[question.id] === "string" && draft[question.id] ? [draft[question.id] as string] : [];
     if (current.includes(option)) {
       setDraft((values) => ({ ...values, [question.id]: current.filter((item) => item !== option) }));
     } else if (!question.max || current.length < question.max) {
@@ -1530,7 +1566,8 @@ function JourneyMap({ name, onCertificate, onSummary, onReview }: { name: string
         <p>500 XP • DISCOVERY COMPLETE</p>
         <h1>Way to level up, {name}.</h1>
         <span>Resume District is now unlocked.</span>
-        <div className="map-actions"><Button onClick={onSummary}><ClipboardList /> Coach snapshot</Button><Button variant="outline" onClick={onCertificate}><Trophy /> Certificate</Button><Button variant="outline" onClick={onReview}><ArrowLeft /> Review</Button></div>
+        <a className="journey-continue-cta" href="https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery">Continue to Opportunity City → Resume District</a>
+        <div className="map-actions"><Button onClick={onSummary}><ClipboardList /> Coach snapshot</Button><Button variant="outline" onClick={onCertificate}><Trophy /> Certificate</Button><Button variant="outline" onClick={onReview}><ArrowLeft /> Review Discovery</Button></div>
       </div>
       <a
         className="resume-district-hotspot"
