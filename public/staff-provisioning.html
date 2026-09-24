@@ -4,15 +4,16 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BOOST + Level Up Staff Provisioning</title>
 <style>
-body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#eef3f5;color:#183247;margin:0;padding:28px}.card{max-width:860px;margin:auto;background:#fff;border:1px solid #cad7df;border-radius:18px;padding:22px;box-shadow:0 18px 50px #0001}h1{margin-top:0;color:#102d49}textarea{width:100%;min-height:220px;padding:12px;border:1px solid #b9cbd5;border-radius:12px;font:13px/1.5 ui-monospace,Consolas,monospace;box-sizing:border-box}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:999px;padding:11px 16px;background:#102d49;color:#fff;font-weight:900;cursor:pointer}.alt{background:#e7eef2;color:#17324d}.status{margin-top:14px;white-space:pre-wrap;font:13px/1.5 ui-monospace,Consolas,monospace;background:#f6f9fa;border-radius:10px;padding:12px}.note{font-size:13px;line-height:1.5;color:#58707d}
+body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#eef3f5;color:#183247;margin:0;padding:28px}.card{max-width:860px;margin:auto;background:#fff;border:1px solid #cad7df;border-radius:18px;padding:22px;box-shadow:0 18px 50px #0001}h1{margin-top:0;color:#102d49}select{padding:9px 12px;border:1px solid #b9cbd5;border-radius:10px;background:#fff}textarea{width:100%;min-height:220px;padding:12px;border:1px solid #b9cbd5;border-radius:12px;font:13px/1.5 ui-monospace,Consolas,monospace;box-sizing:border-box}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:999px;padding:11px 16px;background:#102d49;color:#fff;font-weight:900;cursor:pointer}.alt{background:#e7eef2;color:#17324d}.status{margin-top:14px;white-space:pre-wrap;font:13px/1.5 ui-monospace,Consolas,monospace;background:#f6f9fa;border-radius:10px;padding:12px}.note{font-size:13px;line-height:1.5;color:#58707d}
 </style>
 </head>
 <body>
 <div class="card">
 <h1>Staff Provisioning</h1>
-<p class="note">Sign in to both the Level Up Coach View and Northern BOOST Coach View in this browser first. Then paste one staff member per line using <b>Name | Email | Access Code</b>. Add <b>| preserve</b> on a line if Level Up must keep that person's existing credential.</p>
+<p class="note">Sign in to the Level Up Coach View and the appropriate BOOST Coach View in this browser first. Choose the BOOST area, then paste one staff member per line using <b>Name | Email | Access Code</b>. Add <b>| preserve</b> on a line if Level Up must keep that person's existing credential.</p>
+<div class="row"><label><b>BOOST Area</b> <select id="area"><option value="pinal">Pinal BOOST</option><option value="northern">Northern BOOST</option></select></label></div>
 <textarea id="rows" placeholder="Jane Smith | jsmith@example.org | ABCD-EFGH-JKLM&#10;Sam Jones | sjones@example.org | WXYZ-2345-6789 | preserve"></textarea>
-<div class="row"><button id="run">Provision in Level Up + Northern BOOST</button><button id="clear" class="alt">Clear</button></div>
+<div class="row"><button id="run">Provision in Level Up + BOOST</button><button id="clear" class="alt">Clear</button></div>
 <div id="status" class="status">Ready.</div>
 </div>
 <script>
@@ -37,10 +38,11 @@ $('run').onclick=async()=>{
  $('run').disabled=true;$('status').textContent='Working…';
  const out=[];
  try{
+   const area=$('area').value;
    for(const item of items){
      await post(LU,luToken,{action:'admin_provision_staff',display_name:item.display_name,email:item.email,access_code:item.access_code,role:'coach',preserve_existing:item.preserve_existing},'X-Levelup-Staff-Token');
-     await post(BOOST,boostToken,{action:'admin_provision_staff',area:'northern',display_name:item.display_name,email:item.email,access_code:item.access_code,can_northern:true,can_pinal:false},'X-BOOST-Staff-Token');
-     out.push('✓ '+item.display_name+' — Level Up + Northern BOOST');
+     await post(BOOST,boostToken,{action:'admin_provision_staff',area,display_name:item.display_name,email:item.email,access_code:item.access_code,can_northern:area==='northern',can_pinal:area==='pinal'},'X-BOOST-Staff-Token');
+     out.push('✓ '+item.display_name+' — Level Up + '+(area==='pinal'?'Pinal BOOST':'Northern BOOST'));
      $('status').textContent=out.join('\n');
    }
    $('status').textContent+='\n\nComplete.';
