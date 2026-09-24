@@ -751,26 +751,33 @@ export function DiscoveryExperience() {
     if (play) window.setTimeout(replayNarration, 160);
   }
 
+  function markStrengthExplored(id: string) {
+    setJourney((current) => {
+      if (current.exploredStrengths.includes(id)) return current;
+      return { ...current, exploredStrengths: [...current.exploredStrengths, id] };
+    });
+  }
+
   function openStrengthLens(id: string) {
-    const isNew = !journey.exploredStrengths.includes(id);
     setActiveStrengthId(id);
     setStrengthLensMode("front");
     setStrengthLensOpen(true);
-    if (isNew) {
-      setJourney((current) => ({ ...current, exploredStrengths: [...current.exploredStrengths, id] }));
-      if (journey.exploredStrengths.length === STRENGTH_LENS.length - 1) {
-        toast.success("You explored every strength in this scene.", { icon: <Sparkles className="size-4 text-cyan-300" /> });
-      }
-    }
+    markStrengthExplored(id);
+  }
+
+  function markVisualExplored(slide: number, id: string) {
+    setJourney((current) => {
+      const explored = current.exploredVisuals[slide] ?? [];
+      return explored.includes(id)
+        ? current
+        : { ...current, exploredVisuals: { ...current.exploredVisuals, [slide]: [...explored, id] } };
+    });
   }
 
   function openVisualLens(id: string) {
     setActiveVisualId(id);
     setExplorerOpen(true);
-    setJourney((current) => {
-      const explored = current.exploredVisuals[scene.slide] ?? [];
-      return explored.includes(id) ? current : { ...current, exploredVisuals: { ...current.exploredVisuals, [scene.slide]: [...explored, id] } };
-    });
+    markVisualExplored(scene.slide, id);
   }
 
   function openStrengthList() {
@@ -788,7 +795,10 @@ export function DiscoveryExperience() {
   function moveStrengthLens(direction: -1 | 1) {
     const currentIndex = STRENGTH_LENS.findIndex((item) => item.id === activeStrengthId);
     const nextIndex = (currentIndex + direction + STRENGTH_LENS.length) % STRENGTH_LENS.length;
-    openStrengthLens(STRENGTH_LENS[nextIndex].id);
+    const nextId = STRENGTH_LENS[nextIndex].id;
+    setActiveStrengthId(nextId);
+    setStrengthLensMode("front");
+    markStrengthExplored(nextId);
   }
 
   function saveActivity(responses: ActivityResponse) {
@@ -1037,7 +1047,7 @@ export function DiscoveryExperience() {
         journey={journey}
         onUpdate={(updates) => setJourney((current) => ({ ...current, ...updates }))}
       />
-      {sceneExplorer ? <SceneExplorerDialog key={`${scene.slide}-${activeVisualId}`} open={explorerOpen} onOpenChange={setExplorerOpen} explorer={sceneExplorer} activeVisualId={activeVisualId} selected={journey.explorationSelections[scene.slide] ?? []} onChange={(selected) => setJourney((current) => ({ ...current, explorationSelections: { ...current.explorationSelections, [scene.slide]: selected } }))} /> : null}
+      {sceneExplorer ? <SceneExplorerDialog key={`${scene.slide}-${activeVisualId}`} open={explorerOpen} onOpenChange={setExplorerOpen} explorer={sceneExplorer} activeVisualId={activeVisualId} selected={journey.explorationSelections[scene.slide] ?? []} onChange={(selected) => setJourney((current) => ({ ...current, explorationSelections: { ...current.explorationSelections, [scene.slide]: selected } }))} onExplore={(id) => markVisualExplored(scene.slide, id)} /> : null}
 
       <Dialog open={certificateOpen} onOpenChange={setCertificateOpen}>
         <DialogContent className="certificate-dialog" showCloseButton>
@@ -1263,14 +1273,18 @@ function VisualLensOverlay({ slide, items, explored, onOpen, onOpenList }: { sli
   </div>;
 }
 
-function SceneExplorerDialog({ open, onOpenChange, explorer, activeVisualId, selected, onChange }: { open: boolean; onOpenChange: (open: boolean) => void; explorer: SceneExplorer; activeVisualId: string; selected: string[]; onChange: (selected: string[]) => void }) {
+function SceneExplorerDialog({ open, onOpenChange, explorer, activeVisualId, selected, onChange, onExplore }: { open: boolean; onOpenChange: (open: boolean) => void; explorer: SceneExplorer; activeVisualId: string; selected: string[]; onChange: (selected: string[]) => void; onExplore: (id: string) => void }) {
   const [flipped, setFlipped] = useState<string[]>(activeVisualId ? [activeVisualId] : []);
   const visualItems = activeVisualId && explorer.visualItems ? [...explorer.visualItems].sort((a, b) => a.id === activeVisualId ? -1 : b.id === activeVisualId ? 1 : 0) : explorer.visualItems;
   function toggle(theme: string) {
     onChange(selected.includes(theme) ? selected.filter((item) => item !== theme) : [...selected, theme]);
   }
   function flip(id: string) {
-    setFlipped((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+    setFlipped((current) => {
+      const opening = !current.includes(id);
+      if (opening) onExplore(id);
+      return opening ? [...current, id] : current.filter((item) => item !== id);
+    });
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
