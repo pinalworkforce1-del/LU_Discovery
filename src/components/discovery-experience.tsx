@@ -1032,7 +1032,7 @@ export function DiscoveryExperience() {
             </button>
           );
         })}
-        <button disabled={!allComplete} aria-current={scene.phase === "map" ? "step" : undefined} className={scene.phase === "map" ? "is-active map-step" : "map-step"} onClick={() => goToScene(21)}>
+        <button disabled={!allComplete} className="map-step" onClick={() => goToScene(21)}>
           <span>{allComplete ? <Map /> : <LockKeyhole />}</span>Journey Map
         </button>
       </nav>
