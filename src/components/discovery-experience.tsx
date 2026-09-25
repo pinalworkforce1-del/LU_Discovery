@@ -86,6 +86,7 @@ type Scene = {
 };
 type VisualExplorerItem = { id: string; title: string; image: string; happening: string; evidence: string; theme: string };
 type ValueSymbolItem = { id: string; title: string; values: string[]; examples: string[]; hotspot: Hotspot };
+type BackpackPatchItem = { id: "strengths" | "values" | "purpose" | "support"; title: string; hotspot: Hotspot };
 type SceneExplorer = { title: string; intro: string; prompts: { title: string; detail: string; cue: string }[]; themes?: string[]; bridge?: string; visualItems?: VisualExplorerItem[] };
 type ResponseValue = string | string[];
 type ActivityResponse = Record<string, ResponseValue>;
@@ -467,6 +468,13 @@ const VALUE_SYMBOLS: ValueSymbolItem[] = [
   },
 ];
 
+const BACKPACK_PATCHES: BackpackPatchItem[] = [
+  { id: "strengths", title: "Strengths", hotspot: hotspot("73.9%", "31.7%", "6.9%", "13.4%") },
+  { id: "values", title: "Values", hotspot: hotspot("80.8%", "33.0%", "7.4%", "13.7%") },
+  { id: "purpose", title: "Purpose", hotspot: hotspot("73.8%", "45.1%", "7.1%", "14.0%") },
+  { id: "support", title: "Support", hotspot: hotspot("71.6%", "59.2%", "8.3%", "14.0%") },
+];
+
 const SCENE_EXPLORERS: Record<number, SceneExplorer> = {
   3: { title: "Your Story Lens", intro: "Ordinary moments leave clues about who you are becoming.", prompts: [
     { title: "Notice the action", detail: "Look for a moment where someone chose to try, help, learn, create, or keep going.", cue: "What did the person actually do?" },
@@ -566,6 +574,7 @@ export function DiscoveryExperience() {
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [activeVisualId, setActiveVisualId] = useState("");
   const [activeValueSymbolId, setActiveValueSymbolId] = useState("");
+  const [activeBackpackPatchId, setActiveBackpackPatchId] = useState<BackpackPatchItem["id"] | "">("");
   const [strengthLensMode, setStrengthLensMode] = useState<"list" | "front" | "back">("list");
   const [activeStrengthId, setActiveStrengthId] = useState(STRENGTH_LENS[0].id);
   const [draftName, setDraftName] = useState("");
@@ -742,6 +751,7 @@ export function DiscoveryExperience() {
   const scene = SCENES[journey.scene];
   const sceneExplorer = SCENE_EXPLORERS[scene.slide];
   const activeValueSymbol = VALUE_SYMBOLS.find((item) => item.id === activeValueSymbolId) ?? null;
+  const activeBackpackPatch = BACKPACK_PATCHES.find((item) => item.id === activeBackpackPatchId) ?? null;
   const strengthLensAvailable = scene.slide === 5;
   const activeStrength = STRENGTH_LENS.find((item) => item.id === activeStrengthId) ?? STRENGTH_LENS[0];
   const activity = scene.activity ? ACTIVITIES.find((item) => item.id === scene.activity)! : null;
@@ -1073,6 +1083,26 @@ export function DiscoveryExperience() {
             </>
           ) : null}
 
+          {controlsVisible && scene.slide === 20 ? (
+            <>
+              <div className="backpack-guidance-note" role="note">Your Discovery Backpack is packed. Tap a patch to review what you are carrying forward.</div>
+              <div className="backpack-patch-layer" aria-label="Review your Discovery Backpack">
+                {BACKPACK_PATCHES.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="backpack-patch-hotspot"
+                    style={item.hotspot}
+                    onClick={() => setActiveBackpackPatchId(item.id)}
+                    aria-label={"Review your " + item.title + " discoveries"}
+                  >
+                    <span>Review {item.title}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
+
           {controlsVisible && stage && scene.activityHotspot ? (
             <button className={`world-hotspot ${activityComplete ? "is-complete" : ""}`} style={scene.activityHotspot} onClick={() => setActivityOpen(true)} aria-label={`${activityComplete ? "Review" : "Open"} ${stage.prompt}`}>
               <span className="hotspot-ring" />
@@ -1127,6 +1157,12 @@ export function DiscoveryExperience() {
         <ActivityDialog key={`${stage.id}-${activityOpen}`} open={activityOpen} onOpenChange={setActivityOpen} stage={stage} initial={journey.answers[stage.id]} explorationThemes={explorationThemesFor(stage.id, journey.explorationSelections)} onSave={saveActivity} />
       ) : null}
 
+      <BackpackPatchDialog
+        open={Boolean(activeBackpackPatch)}
+        onOpenChange={(open) => { if (!open) setActiveBackpackPatchId(""); }}
+        patch={activeBackpackPatch}
+        journey={journey}
+      />
       <ValueSymbolDialog
         open={Boolean(activeValueSymbol)}
         onOpenChange={(open) => { if (!open) setActiveValueSymbolId(""); }}
@@ -1384,6 +1420,70 @@ function AccessibilityDialog({ open, onOpenChange, scene, journey, onUpdate }: {
         </section>
         <p className="caption-note">Captions appear with every narration video. You can pause, replay, mute, change speed, or skip narration without losing access to the scene.</p>
         <DialogFooter><Button onClick={() => onOpenChange(false)}>Return to Discovery</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BackpackPatchDialog({ open, onOpenChange, patch, journey }: { open: boolean; onOpenChange: (open: boolean) => void; patch: BackpackPatchItem | null; journey: SavedJourney }) {
+  if (!patch) return null;
+
+  const list = (stage: StageId, id: string) => {
+    const value = journey.answers[stage]?.[id];
+    return Array.isArray(value) ? value.filter(Boolean) : typeof value === "string" && value.trim() ? [value.trim()] : [];
+  };
+  const text = (stage: StageId, id: string) => answerText(journey, stage, id);
+  const rows: { label: string; value: string | string[] }[] =
+    patch.id === "strengths" ? [
+      { label: "Strength you're proud of", value: text("strengths", "proudest_strength") },
+      { label: "Where you've used it", value: list("strengths", "strength_setting") },
+      { label: "Skill you want to grow", value: text("strengths", "growth_skill") },
+      { label: "A moment you shared", value: text("strengths", "strength_story") },
+    ] : patch.id === "values" ? [
+      { label: "Your Guiding Stars", value: list("values", "guiding_stars") },
+      { label: "Your brightest star", value: text("values", "brightest_star") },
+      { label: "Why it matters to you", value: text("values", "value_reason") },
+    ] : patch.id === "purpose" ? [
+      { label: "What feels most like you", value: text("purpose", "purpose_statement") },
+      { label: "The common thread you noticed", value: text("purpose", "common_thread") },
+      { label: "Five years from now", value: text("purpose", "five_years") },
+      { label: "What can help you keep going", value: text("purpose", "keep_going") },
+    ] : [
+      { label: "Challenges you identified", value: list("support", "challenges") },
+      { label: "What would make the biggest difference", value: text("support", "biggest_difference") },
+    ];
+
+  const hasContent = rows.some((row) => Array.isArray(row.value) ? row.value.length > 0 : Boolean(row.value));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="scene-explorer-dialog backpack-patch-dialog">
+        <DialogHeader>
+          <p className="activity-kicker">DISCOVERY BACKPACK • {patch.title.toUpperCase()}</p>
+          <DialogTitle>{patch.title}: what you're carrying forward</DialogTitle>
+          <DialogDescription>These are your own Discovery responses—not a score, label, or prediction.</DialogDescription>
+        </DialogHeader>
+        {hasContent ? (
+          <div className="backpack-response-list">
+            {rows.map((row) => {
+              const values = Array.isArray(row.value) ? row.value : row.value ? [row.value] : [];
+              if (!values.length) return null;
+              return (
+                <section key={row.label}>
+                  <strong>{row.label}</strong>
+                  {values.length > 1 ? <ul>{values.map((value) => <li key={value}>{value}</li>)}</ul> : <p>{values[0]}</p>}
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="backpack-empty-state">
+            <Sparkles />
+            <div><strong>This patch is waiting for your reflection.</strong><p>Complete that part of Discovery, then return here to see what you chose.</p></div>
+          </div>
+        )}
+        <p className="caption-note">This backpack is a recap of what you told us about yourself. You can revisit earlier Discovery activities if you want to change an answer.</p>
+        <DialogFooter><Button onClick={() => onOpenChange(false)}>Return to Next-Step Builder</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
