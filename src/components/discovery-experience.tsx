@@ -419,7 +419,7 @@ const VALUE_SYMBOLS: ValueSymbolItem[] = [
       "Choosing work where you can help people or your community.",
       "Making time for family or people who depend on you.",
     ],
-    hotspot: hotspot("66.4%", "27.7%", "7.5%", "12.5%"),
+    hotspot: hotspot("66.7%", "28.1%", "7.0%", "11.8%"),
   },
   {
     id: "star-shield",
@@ -430,7 +430,7 @@ const VALUE_SYMBOLS: ValueSymbolItem[] = [
       "Taking responsibility when a group needs direction.",
       "Earning trust through the way you show up and follow through.",
     ],
-    hotspot: hotspot("89.1%", "27.4%", "7.5%", "12.8%"),
+    hotspot: hotspot("89.4%", "27.9%", "7.0%", "11.9%"),
   },
   {
     id: "shield",
@@ -441,7 +441,7 @@ const VALUE_SYMBOLS: ValueSymbolItem[] = [
       "Saving money or planning ahead before taking a risk.",
       "Choosing a path that helps you feel safe and secure.",
     ],
-    hotspot: hotspot("65.1%", "59.1%", "7.7%", "13.2%"),
+    hotspot: hotspot("65.4%", "59.6%", "7.1%", "12.1%"),
   },
   {
     id: "handshake",
@@ -452,7 +452,7 @@ const VALUE_SYMBOLS: ValueSymbolItem[] = [
       "Listening to people whose experiences are different from yours.",
       "Working with others toward a shared goal.",
     ],
-    hotspot: hotspot("72.8%", "70.4%", "8.2%", "13.8%"),
+    hotspot: hotspot("73.1%", "70.8%", "7.5%", "12.6%"),
   },
   {
     id: "person",
@@ -463,7 +463,7 @@ const VALUE_SYMBOLS: ValueSymbolItem[] = [
       "Trying something new because it could help you grow.",
       "Building a future that feels like your own.",
     ],
-    hotspot: hotspot("83.5%", "59.0%", "7.8%", "13.4%"),
+    hotspot: hotspot("83.8%", "59.5%", "7.1%", "12.2%"),
   },
 ];
 
