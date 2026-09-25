@@ -25,7 +25,7 @@
 </div></section></div>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
-import { initFacilitatedIdentity } from './facilitated-identity.js?v=20260922id1';
+import { initFacilitatedIdentity } from './facilitated-identity.js?v=20260925id2';
 const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co',SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc';
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}),$=id=>document.getElementById(id),params=new URLSearchParams(location.search),alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 let room=(params.get('room')||'').toUpperCase().replace(/[^A-Z2-9]/g,'');const launchModule=(params.get('module')||'').toLowerCase();$('roomCode').textContent=room||'Missing';const facilitatedIdentity=room?await initFacilitatedIdentity({room}):null;function randomCode(n=12){const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,b=>alphabet[b%alphabet.length]).join('')}
