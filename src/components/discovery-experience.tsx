@@ -85,6 +85,7 @@ type Scene = {
   nextGraphic?: boolean;
 };
 type VisualExplorerItem = { id: string; title: string; image: string; happening: string; evidence: string; theme: string };
+type ValueSymbolItem = { id: string; title: string; values: string[]; examples: string[]; hotspot: Hotspot };
 type SceneExplorer = { title: string; intro: string; prompts: { title: string; detail: string; cue: string }[]; themes?: string[]; bridge?: string; visualItems?: VisualExplorerItem[] };
 type ResponseValue = string | string[];
 type ActivityResponse = Record<string, ResponseValue>;
@@ -408,6 +409,64 @@ const SCENE_DESCRIPTIONS: Record<number, string> = {
   22: "A city map shows the Level Up journey. Discovery is complete, Resume District is unlocked, and later districts remain ahead.",
 };
 
+const VALUE_SYMBOLS: ValueSymbolItem[] = [
+  {
+    id: "heart",
+    title: "Care & Connection",
+    values: ["Helping Others", "Family"],
+    examples: [
+      "Checking in on someone who is having a hard day.",
+      "Choosing work where you can help people or your community.",
+      "Making time for family or people who depend on you.",
+    ],
+    hotspot: hotspot("66.4%", "27.7%", "7.5%", "12.5%"),
+  },
+  {
+    id: "star-shield",
+    title: "Pride & Leadership",
+    values: ["Leadership", "Respect"],
+    examples: [
+      "Doing your best even when no one is watching.",
+      "Taking responsibility when a group needs direction.",
+      "Earning trust through the way you show up and follow through.",
+    ],
+    hotspot: hotspot("89.1%", "27.4%", "7.5%", "12.8%"),
+  },
+  {
+    id: "shield",
+    title: "Stability & Security",
+    values: ["Stability", "Financial Security"],
+    examples: [
+      "Wanting dependable work and a predictable schedule.",
+      "Saving money or planning ahead before taking a risk.",
+      "Choosing a path that helps you feel safe and secure.",
+    ],
+    hotspot: hotspot("65.1%", "59.1%", "7.7%", "13.2%"),
+  },
+  {
+    id: "handshake",
+    title: "Respect & Trust",
+    values: ["Respect", "Helping Others"],
+    examples: [
+      "Keeping your word and following through.",
+      "Listening to people whose experiences are different from yours.",
+      "Working with others toward a shared goal.",
+    ],
+    hotspot: hotspot("72.8%", "70.4%", "8.2%", "13.8%"),
+  },
+  {
+    id: "person",
+    title: "Independence & Growth",
+    values: ["Independence", "Adventure"],
+    examples: [
+      "Wanting room to make your own choices.",
+      "Trying something new because it could help you grow.",
+      "Building a future that feels like your own.",
+    ],
+    hotspot: hotspot("83.5%", "59.0%", "7.8%", "13.4%"),
+  },
+];
+
 const SCENE_EXPLORERS: Record<number, SceneExplorer> = {
   3: { title: "Your Story Lens", intro: "Ordinary moments leave clues about who you are becoming.", prompts: [
     { title: "Notice the action", detail: "Look for a moment where someone chose to try, help, learn, create, or keep going.", cue: "What did the person actually do?" },
@@ -506,6 +565,7 @@ export function DiscoveryExperience() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [explorerOpen, setExplorerOpen] = useState(false);
   const [activeVisualId, setActiveVisualId] = useState("");
+  const [activeValueSymbolId, setActiveValueSymbolId] = useState("");
   const [strengthLensMode, setStrengthLensMode] = useState<"list" | "front" | "back">("list");
   const [activeStrengthId, setActiveStrengthId] = useState(STRENGTH_LENS[0].id);
   const [draftName, setDraftName] = useState("");
@@ -681,6 +741,7 @@ export function DiscoveryExperience() {
 
   const scene = SCENES[journey.scene];
   const sceneExplorer = SCENE_EXPLORERS[scene.slide];
+  const activeValueSymbol = VALUE_SYMBOLS.find((item) => item.id === activeValueSymbolId) ?? null;
   const strengthLensAvailable = scene.slide === 5;
   const activeStrength = STRENGTH_LENS.find((item) => item.id === activeStrengthId) ?? STRENGTH_LENS[0];
   const activity = scene.activity ? ACTIVITIES.find((item) => item.id === scene.activity)! : null;
@@ -993,7 +1054,23 @@ export function DiscoveryExperience() {
           {controlsVisible && sceneExplorer ? sceneExplorer.visualItems ? <VisualLensOverlay slide={scene.slide} items={sceneExplorer.visualItems} explored={journey.exploredVisuals[scene.slide] ?? []} onOpen={openVisualLens} onOpenList={() => { setActiveVisualId(""); setExplorerOpen(true); }} /> : <button className="scene-explorer-button" onClick={() => setExplorerOpen(true)}><Eye /> {scene.slide === 16 ? "Open Discovery Backpack" : scene.slide === 20 ? "Open Next-Step Builder" : "Look closer"}</button> : null}
 
           {controlsVisible && scene.slide === 8 ? (
-            <div className="scene-guidance-note" role="note">The blue symbols are visual clues, not hidden buttons. Use them to think about what matters to you, then continue.</div>
+            <>
+              <div className="scene-guidance-note" role="note">Select any glowing blue symbol to see examples of values it might represent. There is no right answer.</div>
+              <div className="value-symbol-layer" aria-label="Explore possible values represented by the glowing blue symbols">
+                {VALUE_SYMBOLS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="value-symbol-hotspot"
+                    style={item.hotspot}
+                    onClick={() => setActiveValueSymbolId(item.id)}
+                    aria-label={"Explore " + item.title + ": " + item.values.join(" and ")}
+                  >
+                    <span>Explore {item.title}</span>
+                  </button>
+                ))}
+              </div>
+            </>
           ) : null}
 
           {controlsVisible && stage && scene.activityHotspot ? (
@@ -1050,6 +1127,11 @@ export function DiscoveryExperience() {
         <ActivityDialog key={`${stage.id}-${activityOpen}`} open={activityOpen} onOpenChange={setActivityOpen} stage={stage} initial={journey.answers[stage.id]} explorationThemes={explorationThemesFor(stage.id, journey.explorationSelections)} onSave={saveActivity} />
       ) : null}
 
+      <ValueSymbolDialog
+        open={Boolean(activeValueSymbol)}
+        onOpenChange={(open) => { if (!open) setActiveValueSymbolId(""); }}
+        symbol={activeValueSymbol}
+      />
       <StrengthLensDialog
         open={strengthLensOpen}
         onOpenChange={setStrengthLensOpen}
@@ -1302,6 +1384,30 @@ function AccessibilityDialog({ open, onOpenChange, scene, journey, onUpdate }: {
         </section>
         <p className="caption-note">Captions appear with every narration video. You can pause, replay, mute, change speed, or skip narration without losing access to the scene.</p>
         <DialogFooter><Button onClick={() => onOpenChange(false)}>Return to Discovery</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ValueSymbolDialog({ open, onOpenChange, symbol }: { open: boolean; onOpenChange: (open: boolean) => void; symbol: ValueSymbolItem | null }) {
+  if (!symbol) return null;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="scene-explorer-dialog value-symbol-dialog">
+        <DialogHeader>
+          <p className="activity-kicker">VALUES • VISUAL CLUE</p>
+          <DialogTitle>{symbol.title}</DialogTitle>
+          <DialogDescription>This symbol could reflect more than one value. These are examples—not a label you have to choose.</DialogDescription>
+        </DialogHeader>
+        <div className="value-symbol-values" aria-label="Possible values">
+          {symbol.values.map((value) => <span key={value}>{value}</span>)}
+        </div>
+        <section className="value-symbol-examples">
+          <strong>What might this look like in real life?</strong>
+          <ul>{symbol.examples.map((example) => <li key={example}>{example}</li>)}</ul>
+        </section>
+        <p className="caption-note">A symbol can mean something different to you. Notice what it brings to mind, then keep exploring.</p>
+        <DialogFooter><Button onClick={() => onOpenChange(false)}>Return to scene</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
