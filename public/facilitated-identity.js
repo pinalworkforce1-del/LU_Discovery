@@ -1,10 +1,17 @@
-const ENDPOINT='https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-facilitated';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
+
+const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co';
+const SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc';
+const ENDPOINT=SUPABASE_URL+'/functions/v1/levelup-facilitated';
+const authClient=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const TOKEN_KEY='levelup-facilitated-access-v1';
 const PROFILE_KEY='levelup-facilitated-profile-v1';
 const RECOVERY_KEY='levelup-facilitated-recovery-v1';
 
-async function call(body){
-  const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+async function call(body,accessToken=''){
+  const headers={'Content-Type':'application/json'};
+  if(accessToken)headers.Authorization='Bearer '+accessToken;
+  const res=await fetch(ENDPOINT,{method:'POST',headers,body:JSON.stringify(body)});
   let data={};try{data=await res.json()}catch{}
   if(!res.ok){const err=new Error(data?.message||data?.error||'Facilitated Level Up service unavailable.');err.status=res.status;err.data=data;throw err}
   return data;
@@ -59,6 +66,42 @@ async function joinFlow(room){
 }
 export async function initFacilitatedIdentity({room}){
   const clean=String(room||'').toUpperCase().replace(/[^A-Z2-9]/g,'');
+  const {data:{session}}=await authClient.auth.getSession();
+  if(session?.access_token){
+    try{
+      const data=await call({action:'join_authenticated',room:clean},session.access_token);saveIdentity(data);
+      return api(clean,data)
+    }catch(err){
+      if(err.status===409&&err.data?.reason==='profile_incomplete'){
+        const prior=readJson(PROFILE_KEY)||{};
+        const root=shell(),card=root.querySelector('#luidCard');
+        const missing=Array.isArray(err.data?.missing)?err.data.missing:[];
+        const needName=missing.includes('display_name'),needCounty=missing.includes('county');
+        const data=await new Promise(resolve=>{
+          card.innerHTML='<div class="luid-kicker">Level Up Live</div><h2>One quick check</h2><p>You are already signed in. Add the missing profile detail below so this facilitated session can use your existing Level Up account.</p><div class="luid-fields">'+
+            (needName?'<label>Name<input id="luidName" autocomplete="name" value="'+esc(err.data?.display_name||prior.display_name||'')+'"></label>':'')+
+            (needCounty?'<label>County<select id="luidCounty"><option value="">Choose county</option><option value="Pinal">Pinal</option><option value="Northern">Northern</option><option value="UFO - Eastern New Mexico">UFO - Eastern New Mexico</option></select></label>':'')+
+            '</div><button class="luid-btn" id="luidContinue">Continue to Level Up Live</button><div class="luid-error" id="luidError"></div>';
+          card.querySelector('#luidContinue').onclick=async()=>{
+            const btn=card.querySelector('#luidContinue');btn.disabled=true;btn.textContent='Connecting…';
+            try{
+              const next=await call({
+                action:'join_authenticated',
+                room:clean,
+                display_name:needName?card.querySelector('#luidName').value.trim():undefined,
+                county:needCounty?card.querySelector('#luidCounty').value:undefined
+              },session.access_token);
+              saveIdentity(next);root.remove();resolve(next)
+            }catch(e){
+              card.querySelector('#luidError').textContent=e.message;card.querySelector('#luidError').classList.add('show');btn.disabled=false;btn.textContent='Continue to Level Up Live'
+            }
+          }
+        });
+        return api(clean,data)
+      }
+      if(err.status!==401)throw err
+    }
+  }
   let token=localStorage.getItem(TOKEN_KEY)||'';
   if(token){
     try{
