@@ -368,7 +368,7 @@ const SCENES: Scene[] = [
     resource: {
       label: "Your Next Step Video",
       href: "https://youtu.be/4KwWbkho68E?si=7UkryJ06rPNnEkDW",
-      hotspot: hotspot("65%", "58%", "14%", "20%"),
+      hotspot: hotspot("61.5%", "58%", "14%", "20%"),
     },
     nextGraphic: true,
   },
