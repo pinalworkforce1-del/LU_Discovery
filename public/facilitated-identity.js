@@ -45,8 +45,25 @@ async function joinFlow(room){
           card.innerHTML='<div class="luid-kicker">Save this code</div><h2>You’re connected</h2><p>This device will reconnect automatically. Keep this recovery code in case you use a different device or clear your browser.</p><div class="luid-code">'+esc(data.recovery_code)+'</div><div class="luid-saved"><b>Progress is now durable.</b><br>Your facilitated module completion can continue across multiple days.</div><button class="luid-btn gold" id="luidContinue">Continue to Level Up</button><div class="luid-note">This code is not a password for your email account. It only reconnects this facilitated Level Up record.</div>';
           card.querySelector('#luidContinue').onclick=()=>{root.remove();resolve(data)}
         }catch(err){
+          if(err.status===409&&err.data?.authenticated_account_exists){accountSignInForm(email);return}
           if(err.status===409&&err.data?.recovery_required){recoveryForm(email);return}
           joinForm(err.message)
+        }
+      }
+    }
+    function accountSignInForm(email=''){
+      card.innerHTML='<div class="luid-kicker">Existing Level Up account</div><h2>Connect your Level Up progress</h2><p>This email already has a self-paced Level Up account. Verify that account before joining so Facilitated Mode does not create a second participant record.</p><div class="luid-fields"><label>Email address<input id="luidEmail" type="email" value="'+esc(email||prior.email||'')+'"></label></div><button class="luid-btn" id="luidVerify">Email My Secure Sign-In Link</button><button class="luid-btn alt" id="luidBack">← Use a different email</button><div class="luid-error" id="luidError"></div><div class="luid-note" style="margin-top:12px">After you open the secure link, Level Up will return you to this classroom room and connect the facilitated session to your existing account.</div>';
+      card.querySelector('#luidBack').onclick=()=>joinForm();
+      card.querySelector('#luidVerify').onclick=async()=>{
+        const address=card.querySelector('#luidEmail').value.trim().toLowerCase();
+        const btn=card.querySelector('#luidVerify');btn.disabled=true;btn.textContent='Sending…';
+        try{
+          const redirectTo=new URL(location.href);redirectTo.hash='';
+          const {error}=await authClient.auth.signInWithOtp({email:address,options:{emailRedirectTo:redirectTo.toString()}});
+          if(error)throw error;
+          card.innerHTML='<div class="luid-kicker">Secure sign-in sent</div><h2>Check your email</h2><p>Open the Level Up sign-in link on this device. You will return to this live classroom room and continue under your existing participant account.</p><div class="luid-saved"><b>No duplicate was created.</b><br>Your classroom entry is waiting for verified Level Up sign-in.</div>';
+        }catch(err){
+          card.querySelector('#luidError').textContent=err.message;card.querySelector('#luidError').classList.add('show');btn.disabled=false;btn.textContent='Email My Secure Sign-In Link'
         }
       }
     }
