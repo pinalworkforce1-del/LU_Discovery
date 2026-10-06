@@ -94,6 +94,9 @@ jobs:
       - name: Patch Coach View XP audit
         run: python scripts/patch-coach-xp-audit.py
 
+      - name: Patch Level Up Live Career Tree
+        run: python scripts/patch-level-up-live-career-tree.py
+
       - name: Build site
         run: npm run build
         env:
@@ -114,6 +117,12 @@ jobs:
           grep -q "'money-moves':1100" dist/coach-level-up.html
           grep -q "TOTAL_XP_MAX" dist/coach-level-up.html
           grep -q "XP earned" dist/coach-level-up.html
+
+      - name: Verify Level Up Live Career Tree launch
+        run: |
+          grep -q 'id="careerTreeCard"' dist/level-up-live.html
+          grep -q "mode','facilitated" dist/level-up-live.html
+          grep -q "from','level-up-live" dist/level-up-live.html
 
       - name: Generate offline manifest
         run: node scripts/generate-offline-manifest.mjs dist /LU_Discovery/
