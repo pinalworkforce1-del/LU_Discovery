@@ -11,6 +11,11 @@ replacements = [
         "const TOTAL_XP_MAX=sequence.reduce((sum,id)=>sum+(xpMax[id]||0),0);\n"
         "const formatXp=n=>Number(n||0).toLocaleString('en-US');\n"
         "const moduleXp=m=>Math.max(0,...(m?.rows||[]).map(r=>Number(r.xp)||0));\n"
+        "const UFO_COUNTY='UFO - Eastern New Mexico';\n"
+        "const UFO_COACH_EMAILS=new Set(['ckoone@eckerd.org','rfresquez@eckerd.org','lkerby@eckerd.org','smoffitt@eckerd.org','eportio@eckerd.org']);\n"
+        "const isUfoCoach=()=>UFO_COACH_EMAILS.has(String(coach?.email||'').toLowerCase());\n"
+        "const isSample=p=>String(p?.email||'').toLowerCase().endsWith('@levelup.local');\n"
+        "const participantContact=p=>isSample(p)?'Sample participant':(p?.email||'No email');\n"
     ),
     (
         "   const mods=mergedModules(p),complete=mods.filter(m=>m.rows.some(r=>r.is_complete)).length;\n",
@@ -27,6 +32,14 @@ replacements = [
     (
         "<em>'+(xp?xp+' XP • ':'')+(updated?fmt(updated):'')+'</em>",
         "<em>'+formatXp(xp)+' / '+formatXp(max)+' XP'+(updated?' • '+fmt(updated):'')+'</em>"
+    ),
+    (
+        "<div class=\"meta\">'+esc(p.email||'No email')+' • '+esc(p.county||'Unassigned')+' • Last activity ",
+        "<div class=\"meta\">'+esc(participantContact(p))+' • '+esc(p.county||'Unassigned')+' • Last activity "
+    ),
+    (
+        "(p.modalities||[]).map(m=>'<span class=\"tag '+(m==='facilitated'?'fac':'self')+'\">'+(m==='facilitated'?'Facilitated':'Self-paced')+'</span>').join('')+(['coach','admin'].includes(p.role)?'<span class=\"tag unlinked\">'+esc(p.role)+' test/staff</span>':'')",
+        "(isSample(p)?'<span class=\"tag unlinked\">Sample participant</span>':'')+(p.modalities||[]).map(m=>'<span class=\"tag '+(m==='facilitated'?'fac':'self')+'\">'+(m==='facilitated'?'Facilitated':'Self-paced')+'</span>').join('')+(['coach','admin'].includes(p.role)?'<span class=\"tag unlinked\">'+esc(p.role)+' test/staff</span>':'')"
     ),
     (
         " const recorded=mergedModules(person).filter(m=>m.rows.length);\n",
@@ -56,12 +69,25 @@ replacements = [
         "+d.facilitated.xp+' XP • '+fmt(d.facilitated.completed_at||d.facilitated.updated_at)",
         "+formatXp(d.facilitated.xp)+' / '+formatXp(xpMax[moduleId]||0)+' XP • '+fmt(d.facilitated.completed_at||d.facilitated.updated_at)"
     ),
+    (
+        "$('drawerMeta').textContent=(person?.county||'Unassigned')+' • '+(person?.email||'');",
+        "$('drawerMeta').textContent=(person?.county||'Unassigned')+' • '+participantContact(person);"
+    ),
+    (
+        "+htmlEsc(person.email||'')+' • '+htmlEsc(person.county||'Unassigned')+",
+        "+htmlEsc(participantContact(person))+' • '+htmlEsc(person.county||'Unassigned')+"
+    ),
+    (
+        "coach=data.coach;rows=data.participants||[];assignableStaff=data.assignable_staff||[];renderCoachFilter();$('coachBadge').textContent=(coach.display_name||coach.email||'Coach')+' • '+coach.role;",
+        "coach=data.coach;rows=data.participants||[];assignableStaff=data.assignable_staff||[];"
+        "if(isUfoCoach()){rows=rows.filter(p=>p.county===UFO_COUNTY);assignableStaff=assignableStaff.filter(s=>UFO_COACH_EMAILS.has(String(s.email||'').toLowerCase()));$('countyFilter').innerHTML='<option value=\"'+UFO_COUNTY+'\">UFO • Eastern New Mexico</option>';$('countyFilter').value=UFO_COUNTY;$('countyFilter').disabled=true;$('showStaff').checked=false;$('showStaff').closest('label')?.classList.add('hidden');$('coachBadge').textContent=(coach.display_name||coach.email||'Coach')+' • UFO';}renderCoachFilter();if(!isUfoCoach())$('coachBadge').textContent=(coach.display_name||coach.email||'Coach')+' • '+coach.role;"
+    ),
 ]
 
 for old, new in replacements:
     if old not in text:
-        raise SystemExit(f'Coach XP patch signature not found: {old[:100]!r}')
+        raise SystemExit(f'Coach XP/scope patch signature not found: {old[:100]!r}')
     text = text.replace(old, new, 1)
 
 path.write_text(text, encoding='utf-8')
-print(f'Patched Level Up Coach View with audited XP maximums; series max = {500+1275+435+730+565+300+1100:,} XP.')
+print(f'Patched Level Up Coach View with audited XP maximums and UFO regional scope; series max = {500+1275+435+730+565+300+1100:,} XP.')
