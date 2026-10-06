@@ -88,7 +88,7 @@ jobs:
               print('Resume Builder startup key already repaired.')
           PY
 
-      - name: Harden mock interview voice recognition
+      - name: Patch mock interview voice recording
         run: python scripts/patch-mock-interview-voice.py
 
       - name: Build site
@@ -97,10 +97,12 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Verify mock interview voice patch
+      - name: Verify mock interview voice recording
         run: |
-          grep -q "Microphone connected" dist/mock-interview.html
-          grep -q "service-not-allowed" dist/mock-interview.html
+          grep -q "System default microphone" dist/mock-interview.html
+          grep -q "Recording from" dist/mock-interview.html
+          grep -q "interview-transcribe" dist/mock-interview.html
+          grep -q "Transcribing" dist/mock-interview.html
 
       - name: Generate offline manifest
         run: node scripts/generate-offline-manifest.mjs dist /LU_Discovery/
