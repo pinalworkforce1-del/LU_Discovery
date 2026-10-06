@@ -72,6 +72,22 @@ jobs:
           print(f"Wrote {len(compact)} O*NET occupations")
           PY
 
+      - name: Repair Resume Builder runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('public/resume-builder-prototype.html')
+          text = path.read_text(encoding='utf-8')
+          bad = "const RESUME_LOCAL_KEY=FACILITATOR_DEMO?'levelup-resume-builder-demo-'+DEMO_ROOM:RESUME_LOCAL_KEY;"
+          good = "const RESUME_LOCAL_KEY=FACILITATOR_DEMO?'levelup-resume-builder-demo-'+DEMO_ROOM:'levelup-resume-builder-prototype';"
+          if bad in text:
+              text = text.replace(bad, good, 1)
+              path.write_text(text, encoding='utf-8')
+              print('Repaired Resume Builder startup key.')
+          else:
+              print('Resume Builder startup key already repaired.')
+          PY
+
       - name: Build site
         run: npm run build
         env:
