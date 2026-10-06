@@ -1,83 +1,43 @@
 from pathlib import Path
 
-path = Path('public/mock-interview.html')
-text = path.read_text(encoding='utf-8')
-old = '''function toggleRecognition(){if(listening){try{recognition?.stop()}catch(_){}return}const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('listenStatus').innerHTML='<div class="statusBox bad">Voice recognition is not available in this browser. Type your answer instead.</div>';return}recognition=new SR();recognition.lang='en-US';recognition.continuous=true;recognition.interimResults=true;let finalText=$('answer').value.trim();recognition.onstart=()=>{listening=true;$('speak').textContent='■ Stop Voice Answer';$('listenStatus').innerHTML='<div class="listening"><span class="pulse"></span>Listening… you can edit the transcript before submitting.</div>'};recognition.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText?' ':'')+t.trim();else interim+=t}$('answer').value=(finalText+(interim?' '+interim:'')).trim()};recognition.onerror=e=>{$('listenStatus').innerHTML='<div class="statusBox bad">Voice recognition stopped. You can keep typing your answer.</div>'};recognition.onend=()=>{listening=false;$('speak').textContent='🎙 Start Voice Answer';$('answer').value=finalText||$('answer').value};try{recognition.start()}catch(_){}}
-'''
-new = '''async function toggleRecognition(){
-  if(listening){try{recognition?.stop()}catch(_){}return}
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  const status=$('listenStatus'),button=$('speak'),answer=$('answer');
-  if(!SR){status.innerHTML='<div class="statusBox bad">Voice recognition is not available in this browser. Try Chrome or Edge, or type your answer instead.</div>';return}
+p=Path('public/mock-interview.html')
+s=p.read_text(encoding='utf-8')
 
-  try{questionAudio?.pause()}catch(_){}
-  try{speechSynthesis.cancel()}catch(_){}
+decl="let stream=null,faceLandmarker=null,visionReady=false,cameraEnabled=false,calibration=null,raf=0,recognition=null,listening=false,answerStart=0;"
+if decl in s:
+    s=s.replace(decl,decl[:-1]+",voiceRecorder=null,voiceRecorderStream=null,voiceChunks=[];",1)
 
-  if(navigator.mediaDevices?.getUserMedia){
-    try{
-      const mic=await navigator.mediaDevices.getUserMedia({audio:true});
-      mic.getTracks().forEach(track=>track.stop());
-    }catch(e){
-      const blocked=e?.name==='NotAllowedError'||e?.name==='SecurityError';
-      status.innerHTML='<div class="statusBox bad">'+(blocked?'Microphone access is blocked. Allow microphone access for this site in your browser, then click Start Voice Answer again.':'I could not access a microphone on this device. Check your microphone and browser permissions, or type your answer instead.')+'</div>';
-      return;
-    }
-  }
+start=s.find('async function toggleRecognition(){')
+end=s.find('\nasync function submitAnswer()',start)
+if start<0 or end<0: raise SystemExit('Voice function markers not found')
 
-  recognition=new SR();
-  recognition.lang='en-US';
-  recognition.continuous=true;
-  recognition.interimResults=true;
-  recognition.maxAlternatives=1;
-  let finalText=answer.value.trim();
-
-  recognition.onstart=()=>{
-    listening=true;
-    button.textContent='■ Stop Voice Answer';
-    status.innerHTML='<div class="listening"><span class="pulse"></span>Microphone connected — speak your answer. You can edit the transcript before submitting.</div>';
-  };
-  recognition.onaudiostart=()=>{
-    status.innerHTML='<div class="listening"><span class="pulse"></span>Listening… speak naturally and your words will appear below.</div>';
-  };
-  recognition.onresult=e=>{
-    let interim='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal)finalText+=(finalText?' ':'')+t.trim();
-      else interim+=t;
-    }
-    answer.value=(finalText+(interim?' '+interim:'')).trim();
-  };
-  recognition.onerror=e=>{
-    const messages={
-      'not-allowed':'Microphone permission is blocked. Allow microphone access for this site, then try again.',
-      'service-not-allowed':'Voice recognition is blocked by this browser or device policy. Try Chrome or Edge, or type your answer.',
-      'audio-capture':'No working microphone was detected. Check your microphone and browser permissions.',
-      'network':'The browser voice-recognition service could not be reached. Check your internet connection and try again.',
-      'no-speech':'I did not hear any speech. Click Start Voice Answer and try again.'
-    };
-    status.innerHTML='<div class="statusBox bad">'+(messages[e.error]||('Voice recognition stopped ('+String(e.error||'unknown error')+'). You can try again or type your answer.'))+'</div>';
-  };
-  recognition.onend=()=>{
-    listening=false;
-    button.textContent='🎙 Start Voice Answer';
-    answer.value=finalText||answer.value;
-  };
-  try{
-    recognition.start();
-  }catch(e){
-    listening=false;
-    button.textContent='🎙 Start Voice Answer';
-    status.innerHTML='<div class="statusBox bad">Voice recognition could not start. Refresh the page and try again, or type your answer.</div>';
-  }
+fn="""async function transcribeVoiceBlob(blob,mimeType){
+  if(!await ensureAuth())throw new Error('auth');
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session?.access_token)throw new Error('auth');
+  const ext=(mimeType||'').includes('mp4')?'m4a':(mimeType||'').includes('ogg')?'ogg':'webm';
+  const form=new FormData();form.append('file',blob,'voice-answer.'+ext);
+  const r=await fetch(SUPABASE_URL+'/functions/v1/interview-transcribe',{method:'POST',headers:{Authorization:'Bearer '+session.access_token,apikey:SUPABASE_KEY},body:form});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok||!data?.text)throw new Error(data?.error||'transcription_failed');
+  return String(data.text).trim();
 }
-'''
-if old in text:
-    text = text.replace(old, new, 1)
-elif 'Microphone connected — speak your answer' in text:
-    print('Voice-recognition patch already present.')
-    raise SystemExit(0)
-else:
-    raise SystemExit('Mock interview voice-recognition signature changed; patch not applied')
-path.write_text(text, encoding='utf-8')
-print('Hardened mock interview voice recognition.')
+async function toggleRecognition(){
+  const status=$('listenStatus'),button=$('speak'),answer=$('answer');
+  if(listening){button.disabled=true;button.textContent='Transcribing…';status.innerHTML='<div class=\"statusBox\">Turning your recorded answer into text…</div>';try{voiceRecorder?.stop()}catch(_){}return}
+  try{questionAudio?.pause()}catch(_){}try{speechSynthesis.cancel()}catch(_){}
+  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){status.innerHTML='<div class=\"statusBox bad\">Voice recording is not available in this browser. Try Chrome or Edge, or type your answer instead.</div>';return}
+  try{voiceRecorderStream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){status.innerHTML='<div class=\"statusBox bad\">Microphone access is blocked or unavailable. Allow microphone access for this site, then try again.</div>';return}
+  const choices=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
+  const mimeType=choices.find(t=>MediaRecorder.isTypeSupported(t))||'';voiceChunks=[];
+  voiceRecorder=mimeType?new MediaRecorder(voiceRecorderStream,{mimeType}):new MediaRecorder(voiceRecorderStream);
+  voiceRecorder.ondataavailable=e=>{if(e.data?.size)voiceChunks.push(e.data)};
+  voiceRecorder.onstart=()=>{listening=true;button.disabled=false;button.textContent='■ Stop Voice Answer';status.innerHTML='<div class=\"listening\"><span class=\"pulse\"></span>Recording… speak naturally. Click Stop Voice Answer when finished.</div>'};
+  voiceRecorder.onstop=async()=>{listening=false;const type=voiceRecorder?.mimeType||mimeType||'audio/webm';const blob=new Blob(voiceChunks,{type});voiceRecorderStream?.getTracks().forEach(t=>t.stop());voiceRecorderStream=null;voiceRecorder=null;voiceChunks=[];try{const t=await transcribeVoiceBlob(blob,type);answer.value=(answer.value.trim()+(answer.value.trim()?' ':'')+t).trim();status.innerHTML='<div class=\"statusBox good\">Transcript ready. Review or edit your answer, then submit when ready.</div>'}catch(e){console.warn(e);status.innerHTML='<div class=\"statusBox bad\">I recorded your answer, but transcription could not finish. Try again or type your answer.</div>'}button.disabled=false;button.textContent='🎙 Start Voice Answer'};
+  try{voiceRecorder.start(250)}catch(e){voiceRecorderStream?.getTracks().forEach(t=>t.stop());voiceRecorderStream=null;voiceRecorder=null;status.innerHTML='<div class=\"statusBox bad\">Voice recording could not start. Refresh the page and try again.</div>'}
+}
+"""
+
+s=s[:start]+fn+s[end:]
+p.write_text(s,encoding='utf-8')
+print('Mock interview now records voice answers and transcribes them server-side.')
