@@ -97,6 +97,9 @@ jobs:
       - name: Patch Level Up Live Career Tree
         run: python scripts/patch-level-up-live-career-tree.py
 
+      - name: Patch Career Tree Coach View
+        run: python scripts/patch-career-tree-coach-dashboard.py
+
       - name: Build site
         run: npm run build
         env:
@@ -117,6 +120,13 @@ jobs:
           grep -q "'money-moves':1100" dist/coach-level-up.html
           grep -q "TOTAL_XP_MAX" dist/coach-level-up.html
           grep -q "XP earned" dist/coach-level-up.html
+
+      - name: Verify Career Tree Coach View
+        run: |
+          grep -q "Career Tree" dist/coach-level-up.html
+          grep -q "countyFilter" dist/coach-career-tree.html
+          grep -q "coachFilter" dist/coach-career-tree.html
+          grep -q "assign_participant" dist/coach-career-tree.html
 
       - name: Verify Level Up Live Career Tree launch
         run: |
