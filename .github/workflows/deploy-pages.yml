@@ -106,7 +106,7 @@ jobs:
       - name: Verify mock interview voice recording
         run: |
           grep -q "System default microphone" dist/mock-interview.html
-          grep -q "Recording from" dist/mock-interview.html
+          grep -q "Recording:" dist/mock-interview.html
           grep -q "interview-transcribe" dist/mock-interview.html
           grep -q "Transcribing" dist/mock-interview.html
 
