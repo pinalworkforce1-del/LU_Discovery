@@ -562,6 +562,7 @@ function xpForJourney(value: Pick<SavedJourney, "completed" | "exploredStrengths
 }
 
 export function DiscoveryExperience() {
+  const guestMode = new URLSearchParams(window.location.search).get("mode") === "guest";
   const [journey, setJourney] = useState<SavedJourney>(DEFAULT_JOURNEY);
   const [ready, setReady] = useState(false);
   const [started, setStarted] = useState(false);
@@ -591,6 +592,7 @@ export function DiscoveryExperience() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    if (guestMode) { setAuthReady(true); setCloudReady(true); setReady(true); return; }
     if (!supabase) {
       setAuthReady(true);
       setCloudReady(true);
@@ -956,7 +958,7 @@ export function DiscoveryExperience() {
 
   if (!ready || !authReady) return <main className="level-up-shell" aria-label="Loading Discovery" />;
 
-  if (supabaseConfigured && !session) {
+  if (supabaseConfigured && !session && !guestMode) {
     return (
       <AuthScreen
         email={authEmail}
@@ -971,6 +973,7 @@ export function DiscoveryExperience() {
   return (
     <main className={`level-up-shell ${journey.largeText ? "large-text" : ""} ${journey.reducedMotion ? "reduce-motion" : ""}`}>
       <Toaster theme="dark" position="top-center" richColors />
+      {guestMode ? <div role="status" style={{padding:"8px 18px",background:"#163951",color:"#fff",textAlign:"center"}}>GUEST SHOWCASE • Actual Discovery experience • No account or cloud saves • Progress resets on refresh</div> : null}
       <header className="level-up-topbar">
         <div className="brand-lockup" aria-label="Level Up Discovery">
           <span className="brand-mark">LU</span>
@@ -988,7 +991,7 @@ export function DiscoveryExperience() {
           <Button
             className="hud-button city-return-button"
             variant="ghost"
-            onClick={() => window.location.assign("https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery")}
+            onClick={() => window.location.assign(guestMode ? "https://pinalworkforce1-del.github.io/Level_Up_Portal/?mode=guest" : "https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery")}
             aria-label="Back to Opportunity City"
             title="Back to Opportunity City"
           >
