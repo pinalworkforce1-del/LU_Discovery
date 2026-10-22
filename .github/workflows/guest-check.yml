@@ -1,0 +1,33 @@
+name: Guest showcase safety and build checks
+on:
+  push:
+    branches:
+      - feature/guest-showcase-2026
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guest-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build guest branch
+        run: npm run build
+      - name: Verify guest isolation declarations
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+          const app = fs.readFileSync('src/components/discovery-experience.tsx', 'utf8');
+          if (!app.includes('guestMode')) throw Error('Guest mode missing');
+          if (!app.includes('!session && !guestMode')) throw Error('Guest auth bypass missing');
+          if (!app.includes('if (guestMode) { setAuthReady(true);')) throw Error('Guest auth/session isolation missing');
+          if (!app.includes('if (!ready || !session) return;')) throw Error('Session-guarded persistence missing');
+          console.log('Guest Discovery static checks passed');
+          EOF
