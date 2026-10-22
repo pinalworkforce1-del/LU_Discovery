@@ -991,7 +991,7 @@ export function DiscoveryExperience() {
           <Button
             className="hud-button city-return-button"
             variant="ghost"
-            onClick={() => window.location.assign(guestMode ? "https://level-up-portal-git-feature-guest-showc-327cfe-aaronmoonjr-3945.vercel.app/?mode=guest" : "https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery")}
+            onClick={() => window.location.assign(guestMode ? "https://level-up-showcase-guest-aaronmoonjr-3945.vercel.app/?mode=guest" : "https://pinalworkforce1-del.github.io/Level_Up_Portal/?from=discovery")}
             aria-label="Back to Opportunity City"
             title="Back to Opportunity City"
           >
