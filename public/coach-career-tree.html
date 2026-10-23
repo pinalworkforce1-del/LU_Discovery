@@ -12,7 +12,7 @@
 <header class="top"><div class="brand"><b>LEVEL UP • CAREER TREE COACH VIEW</b><span>DISCOVER • EXPLORE • WORK + LIFE</span></div><a class="btn alt" href="coach-level-up.html">Core Coach View</a><button class="btn alt hidden" id="signOut">Sign out</button></header>
 <main class="wrap">
 <section class="signin" id="signin"><small>LEVEL UP STAFF</small><h1>Career Tree Coach View</h1><p>Use the same authorized staff email and Level Up Staff Access Code used for Coach View.</p><input id="email" type="email" autocomplete="email" placeholder="coach@example.com"><input id="staffCode" type="password" autocomplete="current-password" placeholder="Staff access code"><button class="btn" id="login">Enter Career Tree Coach View</button><div class="notice">If you already signed into the main Coach View, this page will reuse that active staff session.</div><div class="error hidden" id="authError"></div></section>
-<section id="app" class="hidden"><div class="toolbar"><input id="search" placeholder="Search participant name or email"><span class="coachMeta" id="coachMeta"></span><button class="btn alt" id="refresh">Refresh</button></div><div class="grid" id="grid"></div></section>
+<section id="app" class="hidden"><div class="toolbar"><input id="search" placeholder="Search participant name or email"><span class="coachMeta" id="coachMeta"></span><button class="btn alt" id="refresh">Refresh</button></div><a id="viewTalentSync" class="btn alt hidden" href="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/talentsync.html" target="_blank" rel="noopener noreferrer">View TalentSync</a><div class="grid" id="grid"></div></section>
 </main>
 <div class="drawerBack" id="drawerBack"><section class="drawer"><div class="drawerHead"><div><small>CAREER TREE • COACH DETAIL</small><h2 id="drawerTitle">Participant</h2><div class="meta" id="drawerMeta"></div></div><button class="btn alt" id="closeDrawer">Close</button></div><div id="drawerBody"></div></section></div>
 <script>
@@ -138,6 +138,9 @@ function renderTalentSyncActions(){
 const originalCareerTreeRender=render;
 render=function(){originalCareerTreeRender();renderTalentSyncActions();};
 
+function updateTalentSyncNav(){const link=$('viewTalentSync');if(link)link.classList.toggle('hidden',!rows.some(p=>p.county==='Pinal'));}
+const priorTalentSyncRender=render;
+render=function(){priorTalentSyncRender();updateTalentSyncNav();};
 $('login').onclick=async()=>{const email=$('email').value.trim().toLowerCase(),access_code=$('staffCode').value.trim();$('authError').classList.add('hidden');$('login').disabled=true;$('login').textContent='Signing in…';try{const res=await fetch(LOGIN_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'staff_login',email,access_code})}),data=await res.json();if(!res.ok)throw new Error(data?.error||'Staff sign-in failed.');localStorage.setItem(STAFF_TOKEN_KEY,data.staff_token);$('staffCode').value='';await load()}catch(err){$('authError').textContent=err.message;$('authError').classList.remove('hidden')}finally{$('login').disabled=false;$('login').textContent='Enter Career Tree Coach View'}};
 $('staffCode').onkeydown=e=>{if(e.key==='Enter')$('login').click()};$('search').oninput=render;$('refresh').onclick=load;$('closeDrawer').onclick=()=>$('drawerBack').classList.remove('show');$('drawerBack').onclick=e=>{if(e.target===$('drawerBack'))$('drawerBack').classList.remove('show')};$('signOut').onclick=()=>{localStorage.removeItem(STAFF_TOKEN_KEY);rows=[];coach=null;showLogin()};load();
 </script>
