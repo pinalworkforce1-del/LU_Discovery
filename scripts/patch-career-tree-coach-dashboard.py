@@ -92,6 +92,17 @@ talentsync_runtime = "\n// Pinal TalentSync intake handoff; server validates coa
 if 'const TALENTSYNC_INTAKE_URL=' not in s:
     s = s.replace("$('login').onclick=async()=>", talentsync_runtime + "\n$('login').onclick=async()=>", 1)
 
+
+# Keep the program-level TalentSync shortcut separate from participant-level transfer.
+talentsync_nav = '<a id="viewTalentSync" class="btn alt hidden" href="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/talentsync.html" target="_blank" rel="noopener noreferrer">View TalentSync</a>'
+if 'id="viewTalentSync"' not in s:
+    s = s.replace('<div class="grid" id="grid"></div></section>', talentsync_nav + '<div class="grid" id="grid"></div></section>', 1)
+if "function updateTalentSyncNav()" not in s:
+    s = s.replace("$('login').onclick=async()=>", """function updateTalentSyncNav(){const link=$('viewTalentSync');if(link)link.classList.toggle('hidden',!rows.some(p=>p.county==='Pinal'));} 
+const priorTalentSyncRender=render;
+render=function(){priorTalentSyncRender();updateTalentSyncNav();};
+$('login').onclick=async()=>""", 1)
+
 career.write_text(s, encoding='utf-8')
 
 # Add the reverse navigation link to the normal Coach View.
