@@ -3,6 +3,9 @@ import re
 
 career = Path('public/coach-career-tree.html')
 s = career.read_text(encoding='utf-8')
+# Normalize the optional navigation shortcut before the canonical toolbar rewrite.
+# Re-added after rendering below; otherwise the toolbar signature mismatches.
+s = re.sub(r'<a id="viewTalentSync"[^>]*>View TalentSync</a>', '', s, count=1)
 
 # Use the same roster/assignment service as the normal Coach View.
 s = s.replace(
