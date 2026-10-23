@@ -101,6 +101,43 @@ function r2wSection(data,module){const wrap=document.createElement('div');wrap.i
 async function openDetail(personKey,module='all'){const p=rows.find(x=>x.person_key===personKey);$('drawerTitle').textContent=(p?.display_name||'Participant')+' — '+({discover_me:'Discover Me',explore_careers:'Explore Careers',work_life_plan:'Work + Life Plan',soft_skills:'Soft Skills Synergy',resume:'Resume Rise',interview:'Interview Intelligence'}[module]||'Career Tree');$('drawerMeta').textContent=(p?.county||'Unassigned')+' • '+(p?.email||'');$('drawerBody').innerHTML='<div class="notice">Loading Career Tree detail…</div>';$('drawerBack').classList.add('show');try{const d=await detail(personKey),ct=d.career_tree||{};$('drawerBody').innerHTML=(module==='discover_me'?discoverHtml(ct.discover_me):module==='explore_careers'?exploreHtml(ct.explore_careers):module==='work_life_plan'?workHtml(ct.work_life_plan):['soft_skills','resume','interview'].includes(module)?r2wSection(d.ready_2_work,module):discoverHtml(ct.discover_me)+exploreHtml(ct.explore_careers)+workHtml(ct.work_life_plan))}catch(err){$('drawerBody').innerHTML='<div class="error">'+esc(err.message)+'</div>'}}
 async function load(){try{const data=await loadRoster();if(!data)return showLogin();coach=data.coach;rows=data.participants||[];$('coachMeta').textContent=(coach?.display_name||coach?.email||'Coach')+' • '+coach?.role;$('signin').classList.add('hidden');$('app').classList.remove('hidden');$('signOut').classList.remove('hidden');render()}catch(err){showLogin(err.message)}}
 function showLogin(msg=''){$('signin').classList.remove('hidden');$('app').classList.add('hidden');$('signOut').classList.add('hidden');if(msg){$('authError').textContent=msg;$('authError').classList.remove('hidden')}}
+
+// Pinal TalentSync intake handoff; server validates coach access, assignment and county.
+const TALENTSYNC_INTAKE_URL='https://dxcajwarqojvmbteroco.supabase.co/functions/v1/talentsync-levelup-intake';
+const talentSyncStates=new Map();
+async function talentSyncRequest(key,action){
+ const h=headers();if(!h)throw Error('Staff session expired');
+ const response=await fetch(TALENTSYNC_INTAKE_URL,{method:'POST',headers:h,body:JSON.stringify({action,person_key:key})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error||'TalentSync unavailable');
+ return data;
+}
+function talentSyncOpen(){alert('Participant is linked. Open TalentSync using your existing authorized staff link.');}
+async function talentSyncSend(key,btn){
+ if(!confirm('Create a Pinal TalentSync intake with available Level Up evidence? This does not approve WIOA enrollment.'))return;
+ btn.disabled=true;btn.textContent='Sending…';
+ try{const state=await talentSyncRequest(key,'send');if(!state.linked)throw Error('Transfer not confirmed');
+ talentSyncStates.set(key,state);btn.textContent='Open in TalentSync';btn.onclick=talentSyncOpen;
+ alert('Intake linked successfully; WIOA enrollment remains unapproved.');}
+ catch(e){btn.textContent='Send to TalentSync';alert('Transfer not completed: '+e.message);}
+ finally{btn.disabled=false;}
+}
+function renderTalentSyncActions(){
+ document.querySelectorAll('#grid .person').forEach(card=>{
+  const key=card.querySelector('[data-person]')?.getAttribute('data-person');
+  const person=rows.find(p=>p.person_key===key);
+  if(!person||person.county!=='Pinal'||!/^auth:[a-f\d-]{36}$/i.test(key||''))return;
+  const button=document.createElement('button');button.className='btn alt';button.type='button';button.disabled=true;button.textContent='Checking TalentSync…';
+  const holder=document.createElement('div');holder.style.cssText='display:flex;justify-content:flex-end;margin-top:12px';holder.appendChild(button);card.appendChild(holder);
+  const apply=state=>{button.disabled=false;if(state.linked){button.textContent='Open in TalentSync';button.onclick=talentSyncOpen}
+   else{button.textContent='Send to TalentSync';button.onclick=()=>talentSyncSend(key,button)}};
+  if(talentSyncStates.has(key)){apply(talentSyncStates.get(key));return}
+  talentSyncRequest(key,'status').then(state=>{talentSyncStates.set(key,state);apply(state)}).catch(e=>{button.textContent='TalentSync unavailable';button.title=e.message});
+ });
+}
+const originalCareerTreeRender=render;
+render=function(){originalCareerTreeRender();renderTalentSyncActions();};
+
 $('login').onclick=async()=>{const email=$('email').value.trim().toLowerCase(),access_code=$('staffCode').value.trim();$('authError').classList.add('hidden');$('login').disabled=true;$('login').textContent='Signing in…';try{const res=await fetch(LOGIN_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'staff_login',email,access_code})}),data=await res.json();if(!res.ok)throw new Error(data?.error||'Staff sign-in failed.');localStorage.setItem(STAFF_TOKEN_KEY,data.staff_token);$('staffCode').value='';await load()}catch(err){$('authError').textContent=err.message;$('authError').classList.remove('hidden')}finally{$('login').disabled=false;$('login').textContent='Enter Career Tree Coach View'}};
 $('staffCode').onkeydown=e=>{if(e.key==='Enter')$('login').click()};$('search').oninput=render;$('refresh').onclick=load;$('closeDrawer').onclick=()=>$('drawerBack').classList.remove('show');$('drawerBack').onclick=e=>{if(e.target===$('drawerBack'))$('drawerBack').classList.remove('show')};$('signOut').onclick=()=>{localStorage.removeItem(STAFF_TOKEN_KEY);rows=[];coach=null;showLogin()};load();
 </script>
