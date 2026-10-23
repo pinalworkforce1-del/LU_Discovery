@@ -101,4 +101,4 @@ elif 'href="coach-career-tree.html"' not in c:
     raise SystemExit('Core Coach View header signature not found')
 core.write_text(c, encoding='utf-8')
 
-print('Patched Career Tree Coach View with shared roster filters, coach assignment, and two-way navigation.')
+print('Patched Career Tree Coach View with shared roster filters, coach assignment, and two-way navigation. TalentSync handoff pending.')
