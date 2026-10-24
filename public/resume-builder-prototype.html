@@ -296,4 +296,5 @@ $('updateResumeBtn').onclick=openResumeUpdateChoices;$('addSkillUpdateBtn').oncl
 ['name','email','phone','location','summary','summaryOn','sumJob','sumGood','sumKnow','eduType','eduStatus','eduSchool','eduYear'].forEach(id=>$(id).addEventListener(id==='summaryOn'||id==='eduType'||id==='eduStatus'?'change':'input',()=>{if(id==='eduStatus'&&$('eduStatus').value==='completed')$('eduYear').value='';updatePreview();saveLocal()}));
 initFacilitatorDemo();loadLocal();loadLocalDiscoveryStrengths();renderRoles();renderSkills();renderSteps();hydrateFields();updatePreview();renderSelectedOccupation();updateNextSkillButton();void renderAISessionStatus();void loadCloudDiscoveryStrengths();if($('roleSearch'))$('roleSearch').addEventListener('input',searchOnet);if($('notSureRole'))$('notSureRole').onclick=chooseNotSure;loadOnet();void initializeResumeCloudContext();
 </script>
+<script src="boost-resume-bridge.js"></script>
 </body></html>
