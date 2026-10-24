@@ -1,7 +1,7 @@
 // Opt-in shared résumé bridge; no account tokens cross the iframe boundary.
 (function(){
   if(new URLSearchParams(location.search).get('source')!=='boost2'||window.parent===window)return;
-  const origin='https://pinalworkforce1-del.github.io';
+  const origin='https://boost2-resume-host-isolated-preview.vercel.app';
   const pending=new Map();let next=0;
   function request(action,payload){
     if(!['save','load'].includes(action))return Promise.reject(Error('Unsupported action'));
