@@ -12,7 +12,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><b>LEVEL UP • COACH VIEW</b><span>TWO MODALITIES • ONE PARTICIPANT STORY</span></div><span class="pill" id="coachBadge">Staff access</span><button class="btn alt hidden" id="signOut">Sign out</button></header>
+<header class="top"><div class="brand"><b>LEVEL UP • COACH VIEW</b><span>TWO MODALITIES • ONE PARTICIPANT STORY</span></div><span class="pill" id="coachBadge">Staff access</span><a class="btn alt hidden" id="staffAdminLink" href="levelup-staff-access.html">Manage Staff Access</a><button class="btn alt hidden" id="signOut">Sign out</button></header>
 <main class="wrap">
 <section class="signin" id="signin"><small>LEVEL UP STAFF</small><h1>Coach View</h1><p>Use your authorized staff email and Level Up Staff Access Code. No email delivery is required.</p><input id="email" type="email" autocomplete="email" placeholder="coach@example.com"><input id="staffCode" type="password" autocomplete="current-password" placeholder="Staff access code" style="margin-top:10px"><button class="btn" id="codeLogin">Enter Coach View</button><div class="notice"><b>Primary staff login.</b> Access codes are verified securely and open a 12-hour staff session.</div><button class="btn alt" id="sendLink" style="margin-top:14px">Backup: Email me a secure sign-in link</button><div class="notice">Only profiles assigned the <b>coach</b> or <b>admin</b> role can open participant records.</div><div class="error hidden" id="authError"></div></section>
 <section id="app" class="hidden">
@@ -175,10 +175,10 @@ $('closeDrawer').onclick=()=>$('drawerBack').classList.remove('show');$('drawerB
 async function load(){
  try{
    const data=await roster();if(!data)return showSignIn();
-   coach=data.coach;rows=data.participants||[];assignableStaff=data.assignable_staff||[];renderCoachFilter();$('coachBadge').textContent=(coach.display_name||coach.email||'Coach')+' • '+coach.role;$('signin').classList.add('hidden');$('app').classList.remove('hidden');$('signOut').classList.remove('hidden');render()
+   coach=data.coach;rows=data.participants||[];assignableStaff=data.assignable_staff||[];renderCoachFilter();$('coachBadge').textContent=(coach.display_name||coach.email||'Coach')+' • '+coach.role;$('signin').classList.add('hidden');$('app').classList.remove('hidden');$('signOut').classList.remove('hidden');$('staffAdminLink').classList.toggle('hidden',coach.role!=='admin');render()
  }catch(err){showSignIn(err.message)}
 }
-function showSignIn(message=''){$('signin').classList.remove('hidden');$('app').classList.add('hidden');$('signOut').classList.add('hidden');if(message){$('authError').textContent=message;$('authError').classList.remove('hidden')}}
+function showSignIn(message=''){$('signin').classList.remove('hidden');$('app').classList.add('hidden');$('signOut').classList.add('hidden');$('staffAdminLink').classList.add('hidden');if(message){$('authError').textContent=message;$('authError').classList.remove('hidden')}}
 $('codeLogin').onclick=async()=>{
  const email=$('email').value.trim().toLowerCase(),access_code=$('staffCode').value.trim();
  $('authError').classList.add('hidden');$('codeLogin').disabled=true;$('codeLogin').textContent='Signing in…';
