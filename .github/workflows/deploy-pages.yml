@@ -134,6 +134,11 @@ jobs:
           grep -q "mode','facilitated" dist/level-up-live.html
           grep -q "from','level-up-live" dist/level-up-live.html
 
+      - name: Verify Staff Access Management deployment file
+        run: |
+          test -f dist/levelup-staff-access.html
+          grep -q 'Generate replacement code' dist/levelup-staff-access.html
+
       - name: Generate offline manifest
         run: node scripts/generate-offline-manifest.mjs dist /LU_Discovery/
 
