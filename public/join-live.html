@@ -37,6 +37,7 @@ if(room){
     ]);
   }catch(error){
     console.warn('Level Up facilitated identity unavailable; opening classroom in temporary participation mode.',error);
+    document.querySelectorAll('.luid-backdrop').forEach(node=>node.remove());
     const notice=document.createElement('div');
     notice.style.cssText='background:#fff4d6;color:#653e14;padding:10px 16px;border-radius:10px;margin:8px 0;font:13px Arial,sans-serif';
     notice.textContent='Classroom connection is available in temporary mode. Your participation may not save to your permanent record. Rejoin later to restore your identity.';
