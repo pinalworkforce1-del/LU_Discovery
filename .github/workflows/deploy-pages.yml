@@ -128,11 +128,15 @@ jobs:
           grep -q "coachFilter" dist/coach-career-tree.html
           grep -q "assign_participant" dist/coach-career-tree.html
 
-      - name: Verify Level Up Live Career Tree launch
+      - name: Verify Level Up Live Career Tree O*NET classroom launch
         run: |
           grep -q 'id="careerTreeCard"' dist/level-up-live.html
-          grep -q "mode','facilitated" dist/level-up-live.html
+          grep -q "facilitator-onet.html" dist/level-up-live.html
           grep -q "from','level-up-live" dist/level-up-live.html
+          grep -q "module:'onet'" dist/facilitator-onet.html
+          grep -q "join-onet.html" dist/join-live.html
+          test -f dist/join-onet.html
+          test -f dist/onet-questions.js
 
       - name: Verify Staff Access Management deployment file
         run: |
