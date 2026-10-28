@@ -111,12 +111,12 @@ career.write_text(s, encoding='utf-8')
 # Add the reverse navigation link to the normal Coach View.
 core = Path('public/coach-level-up.html')
 c = core.read_text(encoding='utf-8')
-old_header = '<header class="top"><div class="brand"><b>LEVEL UP • COACH VIEW</b><span>TWO MODALITIES • ONE PARTICIPANT STORY</span></div><span class="pill" id="coachBadge">Staff access</span><button class="btn alt hidden" id="signOut">Sign out</button></header>'
-new_header = '<header class="top"><div class="brand"><b>LEVEL UP • COACH VIEW</b><span>TWO MODALITIES • ONE PARTICIPANT STORY</span></div><a class="btn alt" href="coach-career-tree.html" style="text-decoration:none">Career Tree</a><span class="pill" id="coachBadge">Staff access</span><button class="btn alt hidden" id="signOut">Sign out</button></header>'
-if old_header in c:
-    c = c.replace(old_header, new_header, 1)
-elif 'href="coach-career-tree.html"' not in c:
-    raise SystemExit('Core Coach View header signature not found')
+# Insert only the missing Career Tree shortcut; retain newer staff-admin controls.
+if 'href="coach-career-tree.html"' not in c:
+    anchor = '<span class="pill" id="coachBadge">Staff access</span>'
+    if anchor not in c:
+        raise SystemExit('Core Coach View staff badge not found')
+    c = c.replace(anchor, '<a class="btn alt" href="coach-career-tree.html" style="text-decoration:none">Career Tree</a>'+anchor, 1)
 core.write_text(c, encoding='utf-8')
 
 print('Patched Career Tree Coach View with shared roster filters, coach assignment, and two-way navigation. TalentSync handoff pending.')
