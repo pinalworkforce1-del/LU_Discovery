@@ -14,7 +14,7 @@ elif 'id="careerTreeCard"' not in s:
     raise SystemExit('Career Tree card insertion point not found')
 
 launch_old="$('launchMoney').onclick=()=>{const u=new URL('facilitator-money.html',location.href);u.searchParams.set('room',room);u.searchParams.set('from','level-up-live');location.href=u.toString()};$('moneyCard').className='module '+(sessionState.completed.includes('money-moves')?'done':'next');$('moneyStatus').textContent=sessionState.completed.includes('money-moves')?'Complete ✓':'Available';$('launchMoney').textContent=sessionState.completed.includes('money-moves')?'Review Money Moves':'Launch Money Moves';"
-launch_new=launch_old+"$('launchCareerTree').onclick=()=>{const u=new URL('facilitator-onet.html',location.href);u.searchParams.set('room',room);u.searchParams.set('from','level-up-live');location.href=u.toString()};"
+launch_new=launch_old+"$('launchCareerTree').onclick=async()=>{if(connected){await channel.send({type:'broadcast',event:'facilitator_state',payload:{mode:'onet',module:'onet',stage:'interest',stageLabel:'Career Tree • O*NET',question:{id:'onet-1',index:1,prompt:'Build kitchen cabinets'},ended:false}}).catch(()=>{})}const u=new URL('facilitator-onet.html',location.href);u.searchParams.set('room',room);u.searchParams.set('from','level-up-live');location.href=u.toString()};"
 if launch_old in s and "$('launchCareerTree').onclick" not in s:
     s=s.replace(launch_old,launch_new,1)
 elif "$('launchCareerTree').onclick" not in s:
