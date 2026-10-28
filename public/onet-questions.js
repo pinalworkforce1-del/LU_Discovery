@@ -1,0 +1,7 @@
+export const QUESTIONS=[
+['R','Build kitchen cabinets'],['I','Develop a new medicine'],['A','Write books or plays'],['S','Help people with personal or emotional problems'],['E','Manage a department within a large company'],['C','Install software across computers on a large network'],
+['R','Repair household appliances'],['I','Study ways to reduce water pollution'],['A','Compose or arrange music'],['S','Give career guidance to people'],['E','Start your own business'],['C','Operate a calculator'],
+['R','Assemble electronic parts'],['I','Conduct chemical experiments'],['A','Create special effects for movies'],['S','Perform rehabilitation therapy'],['E','Negotiate business contracts'],['C','Keep shipping and receiving records'],
+['R','Drive a truck to deliver packages to offices and homes'],['I','Examine blood samples using a microscope'],['A','Paint sets for plays'],['S','Do volunteer work at a non-profit organization'],['E','Market a new line of clothing'],['C','Inventory supplies using a hand-held computer'],
+['R','Test the quality of parts before shipment'],['I','Develop a way to better predict the weather'],['A','Write scripts for movies or television shows'],['S','Teach a high-school class'],['E','Sell merchandise at a department store'],['C','Stamp, sort, and distribute mail for an organization']];
+export const CHOICES=[{value:1,label:'Strongly Dislike',emoji:'😣'},{value:2,label:'Dislike',emoji:'🙁'},{value:3,label:'Unsure',emoji:'😐'},{value:4,label:'Like',emoji:'🙂'},{value:5,label:'Strongly Like',emoji:'🤩'}];
