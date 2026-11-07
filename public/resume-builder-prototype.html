@@ -304,7 +304,7 @@ async function finalizeResumeForExpo(){
  const name=cleanText($('name')?.value||state.contact?.name||'');
  const email=cleanText($('email')?.value||state.contact?.email||'');
  const skills=haveSkills(),bullets=(state.bullets||[]).filter(b=>cleanText(b.bullet||'').length>=20);
- if(name.length<2||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||!skills.length||!bullets.length){
+ if(name.length<2||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!skills.length||!bullets.length){
   setResumeCloudStatus('Before finalizing, add your name, valid email, at least one confirmed skill, and one meaningful experience bullet.','error');return
  }
  if(!confirm('Finalize this résumé as a shareable version? You can keep editing your draft afterward.'))return;
