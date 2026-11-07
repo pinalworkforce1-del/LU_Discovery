@@ -3,15 +3,12 @@ from pathlib import Path
 p=Path('public/level-up-live.html')
 s=p.read_text(encoding='utf-8')
 
-card_old='''<div class="module next" id="moneyCard"><small>Life skill</small><h3>Money Moves</h3><p>Use practical tools to plan spending, protect priorities, and build financial stability.</p><span class="badge" id="moneyStatus">Available</span><div><button class="btn" id="launchMoney" type="button">Launch Money Moves</button></div></div>
-</div></div></section>'''
-card_new='''<div class="module next" id="moneyCard"><small>Life skill</small><h3>Money Moves</h3><p>Use practical tools to plan spending, protect priorities, and build financial stability.</p><span class="badge" id="moneyStatus">Available</span><div><button class="btn" id="launchMoney" type="button">Launch Money Moves</button></div></div>
-<div class="module next" id="careerTreeCard"><small>Career Tree • Classroom</small><h3>Discover Me — O*NET</h3><p>Facilitate the 30-question interest assessment with private student responses.</p><span class="badge">Optional • Facilitated</span><div><button class="btn purple" id="launchCareerTree" type="button">Launch O*NET Group Assessment</button></div></div>
-</div></div></section>'''
-if card_old in s:
-    s=s.replace(card_old,card_new,1)
-elif 'id="careerTreeCard"' not in s:
-    raise SystemExit('Career Tree card insertion point not found')
+card_old='''<div class="module next" id="moneyCard"><small>Life skill</small><h3>Money Moves</h3><p>Use practical tools to plan spending, protect priorities, and build financial stability.</p><span class="badge" id="moneyStatus">Available</span><div><button class="btn" id="launchMoney" type="button">Launch Money Moves</button></div></div>'''
+card_extra='''<div class="module next" id="careerTreeCard"><small>Career Tree • Classroom</small><h3>Discover Me — O*NET</h3><p>Facilitate the 30-question interest assessment with private student responses.</p><span class="badge">Optional • Facilitated</span><div><button class="btn purple" id="launchCareerTree" type="button">Launch O*NET Group Assessment</button></div></div>'''
+if 'id="careerTreeCard"' not in s:
+    if card_old not in s:
+        raise SystemExit('Career Tree card insertion point not found')
+    s=s.replace(card_old,card_old+'\n'+card_extra,1)
 
 launch_old="$('launchMoney').onclick=()=>{const u=new URL('facilitator-money.html',location.href);u.searchParams.set('room',room);u.searchParams.set('from','level-up-live');location.href=u.toString()};$('moneyCard').className='module '+(sessionState.completed.includes('money-moves')?'done':'next');$('moneyStatus').textContent=sessionState.completed.includes('money-moves')?'Complete ✓':'Available';$('launchMoney').textContent=sessionState.completed.includes('money-moves')?'Review Money Moves':'Launch Money Moves';"
 launch_new=launch_old+"$('launchCareerTree').onclick=async()=>{if(connected){await channel.send({type:'broadcast',event:'facilitator_state',payload:{mode:'onet',module:'onet',stage:'interest',stageLabel:'Career Tree • O*NET',question:{id:'onet-1',index:1,prompt:'Build kitchen cabinets'},ended:false}}).catch(()=>{})}const u=new URL('facilitator-onet.html',location.href);u.searchParams.set('room',room);u.searchParams.set('from','level-up-live');location.href=u.toString()};"
