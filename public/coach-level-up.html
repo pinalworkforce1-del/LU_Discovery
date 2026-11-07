@@ -22,6 +22,20 @@
 </section>
 </main>
 <div class="drawerBack" id="drawerBack"><section class="drawer"><div class="drawerHead"><div><small>LEVEL UP • COACH DETAIL</small><h2 id="drawerTitle">Module detail</h2><div class="detailMeta" id="drawerMeta"></div></div><button class="btn alt" id="closeDrawer">Close</button></div><div id="drawerBody"></div></section></div>
+<div class="drawerBack" id="expoInviteModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="expoInviteTitle">
+ <section class="drawer" style="max-width:550px">
+  <div class="drawerHead"><div><small>CAREER TREE · EVENT PARTICIPATION</small><h2 id="expoInviteTitle">Invite to Virtual Career Expo</h2><p>Participant: <strong id="expoInviteName"></strong></p></div><button class="btn alt" type="button" id="expoInviteClose">Close</button></div>
+  <label for="expoInviteEvent" style="display:block;font-weight:700;margin:14px 0 6px">Select an event accepting registration</label>
+  <select id="expoInviteEvent" style="display:block;width:100%;padding:12px;border:1px solid #aabdc8;border-radius:10px;background:#fff;color:#172b3c;font:inherit"></select>
+  <p id="expoInviteFeedback" role="status" style="margin:12px 0;color:#43596b"></p>
+  <button class="btn" type="button" id="expoInviteSend">Generate secure invitation</button>
+  <div id="expoInviteResult" hidden style="margin-top:16px;padding:14px;background:#eff6f8;border-radius:12px">
+   <label for="expoInviteLink" style="display:block;font-weight:700">Private participant invitation URL</label>
+   <input id="expoInviteLink" readonly style="width:100%;padding:10px;margin:8px 0;border:1px solid #aabdc8;border-radius:8px">
+   <button class="btn alt" type="button" id="expoInviteCopy">Copy link</button>
+  </div>
+ </section>
+</div>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
 const SUPABASE_URL='https://dnijrzotfyvmmnmueknk.supabase.co',SUPABASE_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc',ENDPOINT=SUPABASE_URL+'/functions/v1/levelup-facilitated';
@@ -49,19 +63,39 @@ async function roster(){
 }
 async function inviteExpo(userId,name){
  if(!userId)return alert('Only participants with existing Level Up logins can be invited.');
+ const modal=$('expoInviteModal'),select=$('expoInviteEvent'),feedback=$('expoInviteFeedback'),send=$('expoInviteSend'),result=$('expoInviteResult'),link=$('expoInviteLink');
+ modal.classList.add('show');modal.setAttribute('aria-hidden','false');
+ $('expoInviteName').textContent=name;
+ feedback.textContent='Loading events accepting registration…';result.hidden=true;
+ select.replaceChildren();select.disabled=true;send.disabled=true;
  try{
   const headers=await authHeaders();if(!headers)throw Error('Sign in to Coach View first.');
   const endpoint=SUPABASE_URL+'/functions/v1/levelup-expo-invitations';
   const call=async payload=>{const res=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(payload)});const data=await res.json();if(!res.ok)throw Error(data.error||'Invitation request failed');return data};
-  const {events}=await call({action:'events'});if(!events?.length)return alert('There are no Expo events currently accepting invitations.');
-  const choices=events.map((e,i)=>(i+1)+'. '+e.title+' ('+fmt(e.starts_at)+')').join('\\n');
-  const answer=prompt('Invite '+name+' to which Expo event?\\n'+choices+'\\nEnter event number:');
-  if(answer===null)return;
-  const number=Number(answer);if(!Number.isInteger(number)||number<1||number>events.length)throw Error('Select a valid event number.');
-  const data=await call({action:'invite',event_id:events[number-1].id,participant_user_id:userId});
-  try{await navigator.clipboard.writeText(data.url);alert('Secure invitation created for '+name+'.\\nThe invitation URL has been copied to your clipboard.\\nExpires '+fmt(data.expires_at)+'.\\nShare privately with the participant.')}catch{prompt('Secure invitation created. Copy and share privately:',data.url)}
- }catch(err){alert(err.message)}
+  const {events}=await call({action:'events'});
+  if(!events?.length){feedback.textContent='No Expo events are currently accepting invitations.';return}
+  for(const e of events){
+   const option=document.createElement('option');option.value=e.id;
+   option.textContent=e.title+' — '+new Date(e.starts_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'America/Phoenix'});
+   select.append(option);
+  }
+  select.disabled=false;send.disabled=false;feedback.textContent=events.length+' available event'+(events.length===1?'':'s');
+  send.onclick=async()=>{
+   if(!select.value)return;
+   send.disabled=true;feedback.textContent='Generating secure invitation…';
+   try{
+    const data=await call({action:'invite',event_id:select.value,participant_user_id:userId});
+    link.value=data.url;result.hidden=false;
+    feedback.textContent='Invitation ready. Expires '+new Date(data.expires_at).toLocaleDateString()+'. Share this link privately with the participant.';
+    try{await navigator.clipboard.writeText(data.url);$('expoInviteCopy').textContent='Copied ✓'}catch{$('expoInviteCopy').textContent='Copy link'}
+   }catch(err){feedback.textContent=err.message}
+   finally{send.disabled=false}
+  };
+ }catch(err){feedback.textContent=err.message}
 }
+$('expoInviteClose').onclick=()=>{$('expoInviteModal').classList.remove('show');$('expoInviteModal').setAttribute('aria-hidden','true')};
+$('expoInviteModal').onclick=e=>{if(e.target===$('expoInviteModal'))$('expoInviteClose').click()};
+$('expoInviteCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('expoInviteLink').value);$('expoInviteCopy').textContent='Copied ✓'}catch{$('expoInviteLink').select()}};
 function mergedModules(p){
  const map=new Map();
  for(const row of p.progress||[]){
