@@ -6,6 +6,9 @@
 (()=>{
   'use strict';
   const entries=[
+    {title:'Cashier',onet:'Cashiers',aliases:['cashier','cashiers','checkout cashier','retail cashier']},
+    {title:'Retail Sales Associate',onet:'Retail Salespersons',aliases:['retail sales associate','retail salesperson','sales associate']},
+    {title:'Stocker',onet:'Stockers and Order Fillers',aliases:['stock associate','stock clerk','inventory stocker']},
     {title:'Tractor-Trailer Truck Driver',onet:'Heavy and Tractor-Trailer Truck Drivers',aliases:['cdl','truck','truck driver','tractor trailer','tractor-trailer','tractor trailer driver','tractor-trailer driver','cdl driver','heavy equipment tractor trailer drivers']},
     {title:'IT Support Specialist',onet:'Computer User Support Specialists',aliases:['it','it support','help desk','tech support','computer support specialist']},
     {title:'Network Support Specialist',onet:'Computer Network Support Specialists',aliases:['network','network support','network technician']},
@@ -46,6 +49,15 @@
         // A custom job title must not carry a stale occupational reference.
         version.onetOccupationTitle='';changed=true;
       }
+    }
+    // Legacy résumé imports often carried only a target label, not a version target.
+    // Initialize the active version while preserving any participant-entered job title.
+    const current=versions[data.activeVersion||0];
+    if(current&&!String(current.target||'').trim()&&String(data.target||'').trim()){
+      const result=resolve(data.target);
+      current.target=result.title;
+      if(result.matched){current.onetOccupationTitle=result.onetTitle;current.onetOccupationConfirmed=true;}
+      changed=true;
     }
     const active=versions[data.activeVersion||0];
     if(active?.target){
