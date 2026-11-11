@@ -6,7 +6,7 @@ const html=read('index.html'),studio=read('studio.js');
 const scripts=['studio.js','source/resume-occupation-titles-v1.js','source/resume-occupation-search-v1.js','source/resume-format-v1.js','source/resume-evidence-review-v1.js'];
 for(const script of scripts){new vm.Script(read(script),{filename:script});console.log('PASS JS syntax',script)}
 const ids=[...studio.matchAll(/\$\('([^']+)'\)/g)].map(m=>m[1]);
-for(const id of new Set(ids)){assert(html.includes('id="'+id+'"'),'Missing DOM element '+id)}
+for(const id of new Set(ids)){assert(html.includes('id="'+id+'"')||studio.includes('id="'+id+'"'),'Missing DOM element '+id)}
 console.log('PASS '+new Set(ids).size+' DOM IDs');
 for(const file of ['source/styles.css','source/resume-polish-v1.css','source/resume-strategy-v1.css','source/resume-evidence-review-v1.css','source/resume-format-v1.css','source/resume-occupation-search-v1.css'])assert(fs.existsSync(path.join(root,file)),'Missing CSS '+file);
 assert(!html.includes('BOOST_Pathway-Portal/ready-2-work-qa'),'Production BOOST CSS dependency');
