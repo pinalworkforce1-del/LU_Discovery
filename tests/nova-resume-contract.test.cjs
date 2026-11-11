@@ -18,3 +18,17 @@ assert(studio.includes('expo_resume_ready'),'Missing Expo handoff');
 assert(studio.includes('resume_saved=1'),'Missing Ready 2 Work return');
 assert(studio.includes('version_data:finalizedVersion()'),'Canonical finalized version not saved');
 console.log('PASS integration contract checks');
+
+const context={window:{}};vm.runInNewContext(read('source/resume-occupation-titles-v1.js'),context);
+const titles=context.window.R2WOccupationTitles;
+assert.equal(titles.resolve('Cashiers').title,'Cashier');
+assert.equal(titles.resolve('Cashiers').onetTitle,'Cashiers');
+assert.equal(titles.resolve('Customer Experience Associate').title,'Customer Experience Associate','custom job titles retained');
+const legacy={target:'Cashiers',versions:[{name:'Résumé 1',target:''}],activeVersion:0};
+assert.equal(titles.migrate(legacy),true);
+assert.equal(legacy.target,'Cashier');
+assert.equal(legacy.versions[0].onetOccupationTitle,'Cashiers');
+assert.equal(legacy.versions[0].target,'Cashier');
+assert(studio.includes("d.experiences=[{role:'',employer:''"),'Legacy imported résumé must not fabricate a work-history title from occupation');
+assert(studio.includes("const inferred=!String(entry.employer"),'Only inferred legacy work-history titles may be cleaned');
+console.log('PASS participant title vs O*NET classification and legacy import regression');
