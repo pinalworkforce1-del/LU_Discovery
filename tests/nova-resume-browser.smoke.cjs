@@ -26,7 +26,7 @@ const fs = require('node:fs');
    else if(path.endsWith('/user')) body={id:userId};
    await route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(body)});
   });
-  await page.goto('http://127.0.0.1:8765/nova-resume-port/index.html',{waitUntil:'domcontentloaded'});
+  await page.goto('http://127.0.0.1:8765/LU_Discovery/nova-resume-port/index.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => document.getElementById('resumeBuilderStatus')?.textContent.includes('connected'),null,{timeout:15000});
   assert.equal(await page.locator('#rbNext').isVisible(),true,'Next control visible');
   await page.locator('#rbContactName').fill('Studio Test Participant');
