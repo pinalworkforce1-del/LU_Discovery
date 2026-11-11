@@ -31,7 +31,7 @@ const assert = require('node:assert/strict');
  });
  try{
   await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html#resume-builder',{waitUntil:'domcontentloaded'});
-  await page.locator('#northernGate[hidden]').waitFor({timeout:20000});
+  await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
   assert.equal(await page.locator('#viewResumeBuilder').isVisible(),true,'Original résumé builder opened');
   await page.locator('#rbContactName').fill('Test Participant');
   await page.locator('#rbEmail').fill('test@example.invalid');
@@ -59,9 +59,9 @@ const assert = require('node:assert/strict');
   await page.locator('#rbCommitSelectedBullet').click();
   assert.equal(await page.locator('#rpExperienceList').getByText('Organized stock and supported customer requests',{exact:false}).count(),0,'Prior draft replaced');
   assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),1,'Only replacement remains');
-  await page.waitForFunction(()=>!!JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernDirectResume,{timeout:20000});
+  await page.waitForFunction(()=>!!JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernDirectResume,null,{timeout:20000});
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.locator('#northernGate[hidden]').waitFor({timeout:20000});
+  await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
   assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),1,'Saved bullet survived reload');
   await page.locator('#rbNext').click();
   await page.locator('#rbSkills').fill('Customer service, Inventory management');
@@ -77,5 +77,13 @@ const assert = require('node:assert/strict');
   assert.equal(versions[0].version_data.bullets[0].bullet.startsWith('Provided customer support'),true);
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('PASS direct Northern port: identity, stages, Nova clarification, select/highlight, explicit Add, replace, reload, save Level Up version');
+ }catch(e){
+  console.error('Direct-port browser diagnostic:',JSON.stringify({
+   gateText:await page.locator('#northernGateText').textContent().catch(()=>null),
+   visibleView:await page.locator('#viewResumeBuilder').isVisible().catch(()=>null),
+   pageErrors:errors,
+   url:page.url()
+  },null,2));
+  throw e;
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
