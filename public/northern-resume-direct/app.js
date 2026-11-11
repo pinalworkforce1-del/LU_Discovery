@@ -295,9 +295,34 @@
       if(data.needsClarification){askInline(data.question||'Tell me one more detail about what you did.','One more detail');return}
       if(data.integrityFailed){askInline(data.question||'Can you give me one more factual detail so I can verify that wording?','Quick fact check');return}
       const drafts=[{label:'Clear & Direct',text:data.clearDirect},{label:'Skills Forward',text:data.skillsForward}].filter(x=>x.text);
-      showResumeCoach('rbBulletCoach','<b>Nova drafted these only from what you entered.</b><br>Choose one, then edit it if you want.');
-      choices.innerHTML=drafts.map((x,i)=>'<button type="button" class="rosie-draft" data-rb-draft="'+i+'"><b>'+escapeHtml(x.label)+'</b><span>'+escapeHtml(x.text)+'</span></button>').join('');
-      choices.querySelectorAll('[data-rb-draft]').forEach(b=>b.onclick=()=>{const text=drafts[Number(b.dataset.rbDraft)].text;d.evidence=text;const x=d.experiences[d.activeExperience||0]||(d.experiences[d.activeExperience||0]={bullets:[]});x.bullets=Array.isArray(x.bullets)?x.bullets:[];if(!x.bullets.includes(text))x.bullets.push(text);$('rbEvidence').value=d.evidence;syncActiveExperience(d);saveState();renderResumePreview();choices.querySelectorAll('.rosie-draft').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')});
+      showResumeCoach('rbBulletCoach','<b>Nova drafted two truthful options.</b><br>Select one, then click <b>Add selected bullet to résumé</b>. No wording is added on selection alone.');
+      choices.innerHTML=drafts.map((x,i)=>'<button type="button" class="rosie-draft" data-rb-draft="'+i+'" aria-pressed="false"><b>'+escapeHtml(x.label)+'</b><span>'+escapeHtml(x.text)+'</span></button>').join('')+
+       '<button type="button" class="primary-btn" id="rbCommitSelectedBullet" disabled style="margin-top:10px;padding:12px;border-radius:12px">＋ Add selected bullet to résumé</button>';
+      let selectedIndex=-1;
+      const commit=choices.querySelector('#rbCommitSelectedBullet');
+      choices.querySelectorAll('[data-rb-draft]').forEach(b=>b.onclick=()=>{
+        selectedIndex=Number(b.dataset.rbDraft);
+        choices.querySelectorAll('.rosie-draft').forEach(x=>{const selected=x===b;x.classList.toggle('selected',selected);x.setAttribute('aria-pressed',String(selected))});
+        commit.disabled=false;
+        commit.textContent='＋ Add selected bullet to résumé';
+      });
+      commit.onclick=()=>{
+        if(selectedIndex<0)return;
+        const text=drafts[selectedIndex]?.text;
+        if(!text)return;
+        const x=d.experiences[d.activeExperience||0]||(d.experiences[d.activeExperience||0]={bullets:[]});
+        x.bullets=Array.isArray(x.bullets)?x.bullets:[];
+        // Change the choice from this pair without creating two résumé bullets.
+        if(x.novaPairLastApproved&&x.novaPairLastApproved!==text)
+          x.bullets=x.bullets.filter(b=>b!==x.novaPairLastApproved);
+        if(!x.bullets.includes(text))x.bullets.push(text);
+        x.novaPairLastApproved=text;
+        syncActiveExperience(d);saveState();renderResumePreview();
+        const list=$('rbBulletList');
+        if(list)list.innerHTML=x.bullets.map((bullet,i)=>'<div class="saved-bullet"><span>Bullet '+(i+1)+'</span><p>'+escapeHtml(bullet)+'</p></div>').join('');
+        commit.disabled=true;commit.textContent='✓ Bullet added to résumé';
+        showResumeCoach('rbBulletCoach','<b>Selected bullet saved.</b><br>It appears in your live résumé preview. Choose the other draft and click Add if you want to replace this choice.');
+      };
     }catch(e){showResumeCoach('rbBulletCoach','<b>Nova could not complete that draft.</b><br>'+escapeHtml(e.message||'Your own words are still saved. Please try again.'))}finally{btn.disabled=false;btn.textContent='✦ Nova: Turn This Into Résumé Evidence'}
   }
   async function rosieBuildSummary(){
