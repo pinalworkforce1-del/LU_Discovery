@@ -22,7 +22,7 @@ const fs = require('node:fs');
    else if(path.endsWith('/resume_profiles') && method==='POST'){savedProfiles.push(JSON.parse(req.postData()||'{}'));status=201;}
    else if(path.endsWith('/resume_versions') && method==='POST'){const val=JSON.parse(req.postData()||'{}');savedVersions.push(val);body=[{id:'10000000-0000-4000-8000-'+String(savedVersions.length).padStart(12,'0')}];status=201;}
    else if(path.endsWith('/expo_resume_ready') && method==='POST'){readyRows.push({payload:JSON.parse(req.postData()||'{}'),url:req.url()});status=201;}
-   else if(path.endsWith('/resume-ai') && method==='POST'){const val=JSON.parse(req.postData()||'{}');aiCalls.push(val);body=val.mode==='bullet'?{clearDirect:'Assisted customers with purchases and organized inventory during scheduled shifts.',skillsForward:'Provided customer service and maintained organized inventory during scheduled shifts.',needsClarification:false,integrityFailed:false}:val.mode==='job_match'?{alreadyShowing:[],mightBeThere:[],notShowingYet:[],notes:[]}:{error:'unsupported_mode'};}
+   else if(path.endsWith('/resume-ai') && method==='POST'){const val=JSON.parse(req.postData()||'{}');aiCalls.push(val);body=val.mode==='bullet'?(aiCalls.filter(a=>a.mode==='bullet').length===1?{needsClarification:true,question:'What specific tasks did you perform?',clearDirect:'',skillsForward:''}:{clearDirect:'Assisted customers with purchases and organized inventory during scheduled shifts.',skillsForward:'Provided customer service and maintained organized inventory during scheduled shifts.',needsClarification:false,integrityFailed:false}):val.mode==='job_match'?{alreadyShowing:[],mightBeThere:[],notShowingYet:[],notes:[]}:{error:'unsupported_mode'};}
    else if(path.endsWith('/user')) body={id:userId};
    await route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(body)});
   });
@@ -38,9 +38,13 @@ const fs = require('node:fs');
   await page.locator('#rbEmployer').fill('Neighborhood Store');
   await page.locator('#rbEvidence').fill('I assisted customers with purchases and organized shelves during regular shifts.');
   await page.locator('#rbBuildBullet').click();
+  await page.locator('#rbNovaAnswer').waitFor({timeout:12000});
+  await page.locator('#rbNovaAnswer').fill('I organized shelves, guided customers to products, and checked inventory lists.');
+  await page.locator('#rbNovaContinue').click();
   await page.locator('#rbBulletChoices .rosie-draft').first().waitFor({timeout:12000});
   await page.locator('#rbBulletChoices .rosie-draft').first().click();
-  assert.equal(aiCalls[0]?.mode,'bullet','AI bullet called');
+  assert.equal(aiCalls.filter(a=>a.mode==='bullet').length,2,'Clarification triggers second AI bullet call');
+  assert.equal(aiCalls[1]?.evidence?.story.includes('I organized shelves'),true,'Clarifying answer sent as source evidence');
   assert.equal(aiCalls[0]?.evidence?.story.includes('I assisted customers'),true,'AI evidence mapped');
   await page.locator('#rbNext').click();
   assert.equal(await page.locator('[data-resume-step="2"]').isVisible(),true,'Skills step visible');
@@ -56,6 +60,7 @@ const fs = require('node:fs');
   assert.equal(savedVersions.length,1,'Saved a completed version');
   assert.equal(savedVersions[0].version_data.contact.name,'Studio Test Participant','Canonical name in version');
   assert.equal(savedVersions[0].version_data.untouchedLegacy,'retain-this','Legacy data retained');
+  assert(savedProfiles.some(x=>x.master_data?.untouchedLegacy==='retain-this'),'Original profile fields preserved in draft');
   assert.equal(savedVersions[0].version_data.bullets.some(b=>b.bullet?.length>20),true,'Ready 2 Work compatibility bullets');
   await page.locator('#rbFinalizeExpo').click();
   await page.waitForFunction(() => document.getElementById('resumeBuilderStatus')?.textContent.includes('Expo sharing'),null,{timeout:15000});
