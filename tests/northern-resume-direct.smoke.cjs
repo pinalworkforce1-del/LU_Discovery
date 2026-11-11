@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
  page.on('pageerror',e=>errors.push(e.stack||e.message));
  page.on('dialog',d=>d.accept());
  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',route=>route.fulfill({contentType:'application/javascript',body:
-  \`window.supabase={createClient:()=>({
+  `window.supabase={createClient:()=>({
     auth:{getSession:async()=>({data:{session:{access_token:'mock-account-token'}},error:null}),
           getUser:async()=>({data:{user:{id:'00000000-0000-4000-8000-000000000001'}},error:null})},
     from(table){return {
@@ -15,7 +15,7 @@ const assert = require('node:assert/strict');
       upsert:async(row)=>{if(table==='resume_profiles')localStorage.setItem('__mock_master',JSON.stringify(row.master_data));return {error:null}},
       insert:row=>({select:()=>({single:async()=>{const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');a.push(row);localStorage.setItem('__mock_versions',JSON.stringify(a));return {data:{id:'10000000-0000-4000-8000-'+String(a.length).padStart(12,'0')},error:null}}})})
     }}
-  })};\`
+  })};`
  }));
  await page.route('https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-staged-resume-ai',async route=>{
   const val=JSON.parse(route.request().postData()||'{}');requests.push(val);
