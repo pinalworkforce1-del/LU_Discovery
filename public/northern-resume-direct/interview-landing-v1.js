@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const KEY='boost-northern-r2w-v1', STAGE='Interview Landing';
+  const KEY='levelup-northern-direct-r2w-v1', STAGE='Interview Landing';
   const $=id=>document.getElementById(id);
   const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return {}}};
   let lastSignature='';
