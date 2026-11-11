@@ -29,7 +29,7 @@ jobs:
         run: |
           npm run dev -- --host 127.0.0.1 --port 8765 --strictPort >/tmp/nova-vite.log 2>&1 &
           for attempt in $(seq 1 40); do
-            if curl --fail --silent http://127.0.0.1:8765/nova-resume-port/index.html >/dev/null; then exit 0; fi
+            if curl --fail --silent http://127.0.0.1:8765/LU_Discovery/nova-resume-port/index.html >/dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/nova-vite.log
