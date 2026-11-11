@@ -74,7 +74,7 @@
   if(id==='achievements'){
    const el=document.getElementById('rpAchievementList');
    if(!el)return;
-   el.innerHTML=model.achievements.length?'<ul class="resume-achievement-list">'+model.achievements.map(x=>'<li>'+esc(x.text)+'<small>'+esc(x.source)+'</small></li>').join('')+'</ul>':'<p class="preview-placeholder">Approved résumé bullets will appear here as you develop them with Rosie.</p>';
+   el.innerHTML=model.achievements.length?'<ul class="resume-achievement-list">'+model.achievements.map(x=>'<li>'+esc(x.text)+'<small>'+esc(x.source)+'</small></li>').join('')+'</ul>':'<p class="preview-placeholder">Approved résumé bullets will appear here as you develop them with Nova.</p>';
   }
  }
  function render(d){
