@@ -114,7 +114,7 @@ function init(options){
   const v=currentVersion();if(!v)return;
   v.target=title;v.onetOccupationTitle='';v.onetOccupationCode='';v.onetOccupationConfirmed=false;
   const d=get()?.data;if(d)d.target=title;
-  save();close();setStatus('Using your exact job title. No O*NET occupation has been assigned. Rosie will use the job description you provide.');
+  save();close();setStatus('Using your exact job title. No O*NET occupation has been assigned. Nova will use the job description you provide.');
   options.preview?.();input.focus();
  }
  function render(){
@@ -139,7 +139,7 @@ function init(options){
   if(v.onetOccupationConfirmed&&v.onetOccupationTitle&&v.target===input.value){
    setStatus('O*NET occupation: '+v.onetOccupationTitle+(v.onetOccupationCode?' ('+v.onetOccupationCode+')':'')+'.');
   }else if(v.target){
-   setStatus('Exact job title saved. O*NET occupation not assigned; Rosie can still use your job description.');
+   setStatus('Exact job title saved. O*NET occupation not assigned; Nova can still use your job description.');
   }else{
    setStatus('Search occupations, or type the exact title from a job posting.');
   }
