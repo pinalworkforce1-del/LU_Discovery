@@ -1,5 +1,7 @@
 name: Nova Resume Studio Browser Smoke
 on:
+  push:
+    branches: ['northern-resume-builder-port-20261111']
   pull_request:
     paths:
       - 'public/nova-resume-port/**'
