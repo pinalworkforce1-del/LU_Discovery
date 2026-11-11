@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102d49">
+<title>BOOST Get 2 Work Ready</title>
+<link rel="stylesheet" href="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/ready-2-work-qa/styles.css">
+<link rel="stylesheet" href="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/ready-2-work-qa/resume-polish-v1.css">
+<link rel="stylesheet" href="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/ready-2-work-qa/resume-strategy-v1.css">
+<style>#northernGate{position:fixed;inset:0;z-index:99999;background:#0d3049;color:white;display:flex;align-items:center;justify-content:center;padding:24px}#northernGate .inner{max-width:590px;background:#164b65;border:1px solid #5b91a5;border-radius:18px;padding:30px;box-shadow:0 12px 35px #001c2a}#northernGate h1{font-size:25px}#northernGate p{line-height:1.65}#northernGate a{color:#fff}#northernGate[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="resume-evidence-review-v1.css">
+<link rel="stylesheet" href="resume-format-v1.css">
+<link rel="stylesheet" href="resume-occupation-search-v1.css">
+</head>
+<body><div id="northernGate" role="status" aria-live="polite"><div class="inner"><h1>Northern Ready 2 Work</h1><p id="northernGateText">Verifying your Northern BOOST session and enrollment…</p><p><a href="../">← Return to Northern BOOST</a></p></div></div>
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" href="#map" data-route="map" aria-label="Ready 2 Work map">BOOST • GET 2 WORK READY</a>
+    <div class="top-progress" aria-label="Ready 2 Work progress"><span id="overallProgressText">0 of 22 scenarios complete</span><div class="top-track"><i id="overallProgressBar"></i></div></div>
+    <div class="top-actions"><a class="top-link" href="../">← Northern BOOST</a><button id="resetBtn" class="top-link button-link" type="button">Start over</button></div>
+  </header>
+
+  <main id="viewMap" class="view map-view">
+    <section class="hero-map">
+      <img src="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/ready-2-work-qa/assests/r2w-pathway-map.webp" alt="Get 2 Work Ready pathway map showing Soft Skills Base Camp, Resume Retreat, Interview Landing, certificate, and employment opportunities">
+      <button class="map-hotspot hs-soft" data-stage="Soft Skills Base Camp" aria-label="Open Soft Skills Base Camp"></button>
+      <button class="map-hotspot hs-resume" data-stage="Resume Retreat" aria-label="Open Resume Retreat"></button>
+      <button class="map-hotspot hs-interview" data-stage="Interview Landing" aria-label="Open Interview Landing"></button>
+      <button class="map-hotspot hs-cert" data-route="certificate" aria-label="Open Work Ready Certificate"></button>
+    </section>
+    <section class="map-content">
+      <div class="intro-copy"><span class="eyebrow">YOUR READY 2 WORK JOURNEY</span><h1>Build your skills. Show your value. Get ready to work.</h1><p>Move through three work-readiness areas. Your decisions build a six-skill mastery profile that follows you through the experience and onto your BOOST Work Ready Certificate.</p></div>
+      <div id="stageCards" class="stage-cards"></div>
+      <div class="certificate-callout">
+        <div><span class="eyebrow">FINAL MILESTONE</span><h2>BOOST Work Ready Certificate</h2><p>Complete the published Ready 2 Work requirements to unlock an employer-facing certificate with your demonstrated soft-skill mastery profile.</p></div>
+        <button class="primary-btn" data-route="certificate">View certificate progress →</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="viewStage" class="view stage-home" hidden>
+    <section class="stage-hero">
+      <img id="stageHomeImg" alt="">
+      <div class="stage-home-overlay">
+        <button class="ghost-btn" data-route="map">← Ready 2 Work map</button>
+        <div class="stage-home-copy"><span id="stageNumber" class="eyebrow"></span><h1 id="stageHomeTitle"></h1><p id="stageHomeTagline"></p></div>
+        <div class="selection-board">
+          <div class="board-head"><div><span class="eyebrow">YOUR NEXT MOVES</span><h2>Choose an experience</h2></div><div id="stageHomeProgress" class="status-pill"></div></div>
+          <button id="requiredPathBtn" class="board-card required-card" type="button"><span class="card-kicker">REQUIRED PATH</span><strong id="requiredPathTitle"></strong><small id="requiredPathMeta"></small><span class="card-arrow">→</span></button>
+          <div class="board-grid" id="stageExperienceGrid">
+            <button class="board-card optional-card" type="button" disabled><span class="card-kicker">PRACTICE</span><strong>Skill Lab</strong><small>Additional practice experiences will unlock here.</small></button>
+            <button class="board-card optional-card" type="button" disabled><span class="card-kicker">WATCH & LEARN</span><strong>Video Resources</strong><small>Curated employer and career-readiness videos can be added here.</small></button>
+            <button class="board-card optional-card" type="button" disabled><span class="card-kicker">PLAY</span><strong>Games & Challenges</strong><small>Optional skill-building games can be layered into this board later.</small></button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <main id="viewResumeBuilder" class="view resume-builder-view" hidden>
+    <section class="resume-builder-shell">
+      <div class="scene-nav"><button class="ghost-btn dark" id="resumeBackBtn">← Resume Retreat</button><button class="ghost-btn dark" data-route="map">Ready 2 Work map</button></div>
+      <div class="resume-builder-head"><div><span class="eyebrow">RESUME RETREAT • REQUIRED</span><h1>Build Your Employer-Ready Résumé</h1><p>Turn your real experience into clear, credible evidence of what you can do.</p></div><div class="status-pill" id="resumeBuilderStatus">In progress</div></div>
+      <div class="resume-stepper" id="resumeStepper"></div>
+      <div class="resume-workspace">
+        <form id="resumeBuilderForm" class="resume-form">
+          <div class="rosie-guide"><img src="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/assets/images/rosie-career-coach.webp" alt="Rosie, your BOOST career coach"><div><span class="eyebrow">ROSIE • YOUR RÉSUMÉ COACH</span><strong id="rosieStepTitle">Start with the destination.</strong><p id="rosieStepMessage">Tell me where you're headed. You don't need résumé language yet—we'll build that together from what you've actually done.</p><div id="rosieStepExample" class="rosie-example"></div></div></div>
+          <section class="resume-step" data-resume-step="0"><h2>1. Résumé Studio setup</h2><p>Start fresh or import an existing résumé. Your verified résumé details save automatically with your BOOST progress.</p><div class="resume-studio-grid"><label>Full name<input id="rbContactName" autocomplete="name" placeholder="Name as it should appear"></label><label>Email<input id="rbEmail" type="email" autocomplete="email" placeholder="you@example.com"></label><label>Phone<input id="rbPhone" autocomplete="tel" placeholder="(555) 555-5555"></label><label>City, State<input id="rbLocation" autocomplete="address-level2" placeholder="Casa Grande, AZ"></label></div><label>Target for this résumé <small class="field-help">This can differ from your BOOST/TalentSync career direction.</small><input id="rbTarget" list="r2wOccupationOptions" autocomplete="off" placeholder="Type a job, occupation, or pathway (example: CDL)"><datalist id="r2wOccupationOptions"><option value="Tractor-Trailer Truck Driver"><option value="IT Support Specialist"><option value="Network Support Specialist"><option value="Medical Assistant"><option value="Nursing Assistant"><option value="Registered Nurse"><option value="Machinist"><option value="CNC Machine Operator"><option value="Welder"><option value="Electrician"><option value="Construction Laborer"><option value="HVAC Technician"><option value="Customer Service Representative"></datalist><div id="rbOccupationResults" class="occupation-search-results" role="listbox" aria-label="Occupation matches" hidden></div><p id="rbOccupationStatus" class="occupation-search-status" role="status">Search occupations or enter the exact job title from a posting.</p><p class="occupation-search-attribution">Occupation classifications: O*NET 31.0, U.S. Department of Labor · <a href="https://www.onetcenter.org/database.html" target="_blank" rel="noopener noreferrer">O*NET Database</a>. Your exact job title remains yours to choose.</p></label><div class="resume-import-card"><div><strong>Already have a résumé?</strong><p>Bring it into the Studio so Rosie can help evaluate and rebuild it into verified evidence.</p></div><label class="secondary-btn file-btn">Choose résumé<input id="rbResumeUpload" type="file" accept=".pdf,.docx,.txt" hidden></label><span class="prototype-note">PDF, Word (.docx), or TXT. Text is extracted in your browser; review everything before using it.</span><div id="rbImportStatus" role="status" aria-live="polite"></div><div id="rbImportReview" hidden style="grid-column:1/-1"><label>Review imported résumé text<textarea id="rbImportedText" rows="10" placeholder="Extracted text will appear here for review"></textarea></label><button id="rbApplyImport" type="button" class="secondary-btn">Use this résumé in Studio</button></div></div></section>
+          <section class="resume-step" data-resume-step="1" hidden><h2>2. Build your experience</h2><p>Tell Rosie the story first. She'll help turn each experience into a structured employer, role, dates, and multiple verified résumé bullets.</p><div class="experience-structure experience-basics"><label><span>Who did you work for?</span><input id="rbEmployer" placeholder="Employer or organization"></label><label><span>What position did you hold?</span><input id="rbRoleTitle" placeholder="Job title or role"></label><label><span>When did you start?</span><input id="rbStartDate" placeholder="Month / Year or Year"></label><label><span>When did you leave?</span><input id="rbEndDate" placeholder="Month / Year, Year, or Present"></label></div><div class="bullet-workbench"><div class="bullet-workbench-head"><div><strong>Résumé bullets for this experience</strong><p>Build one evidence-backed bullet at a time. Rosie can probe for leadership, scale, tools, results, safety, problems solved, and other real details.</p></div></div><div id="rbBulletList" class="bullet-list"></div><label id="rbEvidenceLabel">What did you do in this role?<textarea id="rbEvidence" rows="4" placeholder="Use normal words. Rosie will ask follow-up questions to uncover strong résumé evidence."></textarea></label><div class="rosie-ai-row"><button id="rbBuildBullet" class="rosie-ai-btn" type="button">✦ Coach me through this bullet</button><div id="rbBulletCoach" class="rosie-ai-coach" hidden></div><div id="rbBulletChoices" class="rosie-draft-choices"></div></div></div><div id="rbExperienceList" class="resume-experience-list"></div><div id="rbExperienceActions" class="experience-next-actions"><button id="rbAddBullet" class="secondary-btn" type="button">＋ Add another bullet to this experience</button><button id="rbAddExperience" class="secondary-btn add-experience-btn" type="button">＋ Add another employer / role</button></div></section>
+          <section class="resume-step" data-resume-step="2" hidden><h2>3. Skills, education & targeting</h2><p>Rosie can look across your verified experiences for transferable skills, then compare them with a job you want.</p><label>Skills<textarea id="rbSkills" rows="4" placeholder="Verified skills, tools, software, equipment, languages..."></textarea></label><label>Education, training & credentials<textarea id="rbEducation" rows="4" placeholder="School, credential, training provider, military training, license..."></textarea></label><div class="target-job-card"><strong>Target a specific job</strong><p>Paste a job description. Rosie will eventually compare it with your verified evidence—highlighting matches and gaps without inventing qualifications.</p><textarea id="rbJobDescription" rows="7" placeholder="Paste the job description here..."></textarea><button id="rbAnalyzeJob" class="rosie-ai-btn" type="button">✦ Rosie: Check My Alignment</button><div id="rbJobCoach" class="rosie-ai-coach" hidden></div><button id="rbTogglePreview" class="secondary-btn evidence-preview-toggle" type="button">Show résumé preview</button><div id="rbAlignmentPanel" class="alignment-panel" hidden><div><strong>Strong match</strong><p id="rbStrongMatch">Verified evidence that directly supports the job.</p></div><div><strong>Could emphasize more</strong><p id="rbEmphasize">Relevant evidence already in your profile that may deserve more attention.</p></div><div><strong>Experience to explore</strong><p id="rbGap">Requirements we cannot support from your verified evidence.</p></div></div><section id="rbEvidenceReview" class="evidence-review" hidden></section></div></section>
+          <section class="resume-step" data-resume-step="3" hidden><h2>4. Format, build & verify</h2><p>Rosie reviews the complete work history and recommends the résumé structure that best presents your verified evidence.</p><div class="format-recommendation"><span class="eyebrow">ROSIE'S FORMAT RECOMMENDATION</span><strong id="rbFormatRecommendation">Hybrid — starting point</strong><p id="rbFormatReason">Choose a format below, or ask Rosie to recommend one based on your target and verified work history.</p><div class="format-options"><button type="button" data-format="chronological">Chronological</button><button type="button" data-format="hybrid" class="selected">Combination / Hybrid</button><button type="button" data-format="functional">Skills-Forward (with Work History)</button></div><p id="rbFormatExplanation" class="resume-format-explanation" role="status">Relevant skills lead, followed by complete reverse-chronological work experience and education. Switching formats never changes saved evidence.</p></div><label>Professional summary<textarea id="rbSummary" rows="4" placeholder="Rosie can draft this from your verified evidence."></textarea></label><div class="rosie-ai-row"><button id="rbDraftSummary" class="rosie-ai-btn" type="button">✦ Rosie: Build My Professional Summary</button><div id="rbSummaryCoach" class="rosie-ai-coach" hidden></div></div><div class="resume-version-card"><strong>Targeted résumé versions</strong><p>Keep up to three versions for different jobs or pathways.</p><div id="rbVersionSlots" class="version-slots"><button type="button">Résumé 1 • Current</button><button type="button">＋ Résumé 2</button><button type="button">＋ Résumé 3</button></div></div><div class="resume-review-panel"><span class="eyebrow">ROSIE'S RÉSUMÉ REVIEW</span><div id="rbEmailReview"><strong>Email check</strong><p>Rosie will flag an obviously informal résumé email and explain why a simple professional address may help.</p></div><div id="rbDateReview"><strong>Date relevance check</strong><p>Rosie can flag older dates or experience that may not strengthen this targeted résumé, without inferring age.</p></div><div id="rbGapReview"><strong>Target-job gap check</strong><p>When a job description is provided, Rosie separates supported qualifications from gaps you should not claim.</p></div></div><div class="resume-integrity-callout"><strong>Rosie's honesty rule</strong><p>A strong résumé makes the truth easier for an employer to see. It never adds experience, credentials, numbers, duties, or accomplishments you can't support.</p></div><label><input id="rbIntegrity" type="checkbox"> I can explain and support every statement on this résumé in an interview.</label><label><input id="rbReady" type="checkbox"> I reviewed the résumé and am comfortable using it in my job search.</label></section>
+          <div class="resume-builder-controls"><button id="rbPrev" class="secondary-btn" type="button">← Back</button><div class="resume-exit-actions"><button id="rbSaveLater" class="secondary-btn save-later-btn" type="button">Save Progress & Finish Later</button><button id="rbNext" class="primary-btn" type="button">Continue →</button></div></div>
+        </form>
+        <aside class="resume-preview resume-style-modern" data-resume-format="hybrid"><span class="eyebrow" data-format-preview-label>LIVE RÉSUMÉ PREVIEW · COMBINATION / HYBRID</span><h2 id="rpName">Your Name</h2><p id="rpContact"></p><p id="rpTarget"></p><div id="rpSections">
+  <section class="rp-section" data-resume-section="summary"><p id="rpSummary"></p></section>
+  <section class="rp-section" data-resume-section="skills"><h3>Relevant Skills</h3><div id="rpSkills"></div></section>
+  <section class="rp-section" data-resume-section="achievements" hidden><h3>Verified Achievements</h3><div id="rpAchievementList"></div></section>
+  <section class="rp-section" data-resume-section="experience"><h3>Professional Experience</h3><div id="rpExperienceList"></div><p id="rpExperience" hidden></p><p id="rpEvidence" hidden></p></section>
+  <section class="rp-section" data-resume-section="education"><h3>Education &amp; Training</h3><div id="rpEducation"></div></section>
+</div></aside>
+      </div>
+    </section>
+  </main>
+
+  <main id="viewScene" class="view scene-view" hidden>
+    <section class="scene-visual"><img id="sceneImg" alt="Workplace scenario"><div class="scene-badge" id="sceneBadge"></div></section>
+    <section class="scene-panel">
+      <div class="scene-nav"><button class="ghost-btn dark" id="backToStage">← Area home</button><button class="ghost-btn dark" data-route="map">Ready 2 Work map</button></div>
+      <div class="skill-hud" id="skillHud"><div class="skill-hud-head"><div><span class="eyebrow">YOUR WORK READY SKILLS</span><strong>Evidence builds with every decision.</strong></div><button id="skillToggle" class="skill-toggle" type="button">View skills</button></div><div class="compact-skill-strip" id="compactSkillStrip"></div><div class="skill-grid" id="skillGrid"></div></div>
+      <div class="scene-progress"><div class="progress-track"><i id="sceneProgressBar"></i></div><div class="progress-meta"><span id="sceneProgressText"></span><span id="stageProgressText"></span></div></div>
+      <span id="sceneStageChip" class="stage-chip"></span><h1 id="sceneTitle"></h1><p id="sceneSetup" class="scene-setup"></p>
+      <div class="audio-row"><button class="primary-btn" id="listenBtn" type="button">🔇 Audio Off</button><button class="secondary-btn" id="ccBtn" type="button">CC</button></div>
+      <div id="promptCaption" class="caption-box"></div><div id="choices" class="choices"></div>
+      <div id="inlineFeedback" class="inline-feedback" hidden><strong id="inlineFeedbackTitle"></strong><p id="inlineFeedbackText"></p><button id="replayBtn" class="secondary-btn" type="button">🔊 Replay impact</button><div id="impactCaption" class="caption-box"></div></div>
+      <div class="scene-controls"><button id="prevSceneBtn" class="secondary-btn" type="button">← Previous</button><button id="nextSceneBtn" class="primary-btn" type="button">Next scenario →</button></div>
+      <p class="save-note">Progress is saved on this device for this prototype.</p><audio id="promptAudio" preload="auto"></audio><audio id="impactAudio" preload="auto"></audio>
+    </section>
+  </main>
+
+  <main id="viewCertificate" class="view certificate-view" hidden>
+    <section class="certificate-toolbar"><button class="ghost-btn dark" data-route="map">← Ready 2 Work map</button><div><span class="eyebrow">FINAL MILESTONE</span><strong id="certificateStatus"></strong></div><button id="printCertificateBtn" class="primary-btn" type="button" disabled title="Northern certificate branding pending verification">Print / Save PDF</button></section>
+    <section id="readinessProgress" class="readiness-progress"><div><span class="eyebrow">WORK READINESS PROGRESS</span><h2 id="readinessProgressTitle">Your progress so far</h2><p id="readinessProgressMeta"></p></div><div class="readiness-progress-track"><i id="readinessProgressBar"></i></div><div id="readinessStageStatus" class="readiness-stage-status"></div></section>
+    <section id="certificate" class="certificate-sheet"><img class="certificate-bg" src="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/ready-2-work-qa/assests/r2w-certificate-bg.webp" alt=""><div class="certificate-content"><div class="cert-brand-row"><img class="cert-aw-logo" style="display:none" src="https://pinalworkforce1-del.github.io/BOOST_Pathway-Portal/ready-2-work-qa/assests/azwork_logo_from_eps_cropped.png?v=20261025-eps" alt="ARIZONA@WORK Pinal County"></div><div class="cert-title"><span>CERTIFICATE OF WORK READINESS</span><h1>BOOST Work Ready Certificate</h1><p>This recognizes demonstrated work-readiness evidence across soft skills, resume readiness, and interview readiness.</p></div><div class="name-block"><label for="participantName">Presented to</label><input id="participantName" type="text" autocomplete="name" placeholder="Participant Name"></div><div class="mastery-title" id="masteryProfileTitle">Soft Skill Mastery Profile</div><div id="certificateSkills" class="certificate-skills"></div><div class="readiness-row"><div><strong>Resume Readiness</strong><span id="resumeReadiness"></span></div><div><strong>Interview Readiness</strong><span id="interviewReadiness"></span></div></div><div class="cert-footer"><div><small>Completion date</small><strong id="certificateDate"></strong></div><div><small>Certificate ID</small><strong id="certificateId"></strong></div><div class="signature"><span></span><small>ARIZONA@WORK Pinal County</small></div></div><div id="certificateLock" class="certificate-lock"><strong>Certificate Locked</strong><span id="certificateLockText"></span></div></div></section>
+    <p class="certificate-note">Northern Arizona certificate branding and employer recognition are pending regional validation. This is a staging preview and is not an issued credential.</p>
+  </main>
+</div>
+
+<dialog id="impactDialog" class="impact-dialog"><div class="impact-card"><button id="impactClose" class="impact-close" type="button" aria-label="Close impact card">×</button><span class="eyebrow">YOUR DECISION • SKILL IMPACT</span><h2 id="impactDialogTitle"></h2><p id="impactDialogText"></p><div id="impactSkillGrid" class="impact-skill-grid"></div><button id="impactContinue" class="primary-btn" type="button">Continue</button></div></dialog>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib)window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.9.1/mammoth.browser.min.js"></script>
+<!-- Course data and application are loaded after authenticated enrollment verification. -->
+<script src="../preview-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="northern-guard.js"></script>
+
+<!-- Northern cloud adapter is loaded only after verified enrollment by northern-guard.js. -->
+</body>
+</html>

@@ -1,0 +1,23 @@
+/* Format changes reorder semantic sections; content is not edited. */
+.resume-preview #rpSections{display:flex;flex-direction:column;gap:0}
+.resume-preview #rpSections>.rp-section[hidden]{display:none!important}
+.resume-preview .rp-section{min-width:0}
+.resume-preview .rp-section>h3{margin:16px 0 9px;border-bottom:1px solid #cbd5dc;padding-bottom:7px}
+.resume-preview .rp-section[data-resume-section="summary"] p{line-height:1.5;white-space:pre-line}
+.resume-preview .resume-skills-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:5px 20px;margin:8px 0;padding-left:20px}
+.resume-preview .resume-skills-list li{line-height:1.5;break-inside:avoid}
+.resume-preview .preview-experience{break-inside:avoid}
+.resume-preview .preview-experience small{display:block;margin:3px 0 7px}
+.resume-preview .preview-experience ul{margin:7px 0;padding-left:20px}
+.resume-preview .preview-experience li{margin:4px 0;line-height:1.5}
+.resume-preview .preview-experience.compact{padding:5px 0 10px;margin:5px 0 10px}
+.resume-preview .resume-achievement-list{padding-left:20px;margin:8px 0}
+.resume-preview .resume-achievement-list li{margin:0 0 11px;line-height:1.5;break-inside:avoid}
+.resume-preview .resume-achievement-list li small{display:block;color:#617385;font-size:.8rem}
+.resume-preview .resume-education-line{margin:5px 0;white-space:pre-line}
+.resume-preview .preview-placeholder{color:#7c8992;font-style:italic}
+.resume-format-explanation{font-size:.88rem;line-height:1.55;color:#425c71;margin:12px 0 0}
+.resume-preview[data-resume-format="chronological"] .resume-skills-list{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.resume-preview[data-resume-format="functional"] .resume-skills-list{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+@media(max-width:700px){.resume-preview .resume-skills-list{grid-template-columns:1fr}}
+@media print{body.print-resume-mode .resume-preview .preview-placeholder{display:none!important}body.print-resume-mode .resume-preview .rp-section{break-inside:auto}body.print-resume-mode .resume-preview .rp-section h3{break-after:avoid}body.print-resume-mode .resume-preview .resume-achievement-list li{break-inside:avoid}}

@@ -1,0 +1,12 @@
+.occupation-search-results{margin:6px 0 0;padding:7px;background:#fff;border:1px solid #bfd1dd;border-radius:12px;box-shadow:0 8px 22px #17374a15;max-height:360px;overflow-y:auto}
+.occupation-search-results[hidden]{display:none!important}
+.occupation-search-heading{padding:7px 10px;color:#526b80;font-size:.79rem;font-weight:700;letter-spacing:.02em}
+.occupation-search-results button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;max-width:100%;min-height:0;height:auto;box-sizing:border-box;margin:2px 0;padding:10px 12px;text-align:left;white-space:normal;overflow-wrap:anywhere;border:1px solid transparent;border-radius:9px;background:transparent;color:#17374a;cursor:pointer;font:inherit}
+.occupation-search-results button strong{font-size:.96rem;line-height:1.35}
+.occupation-search-results button small{font-size:.77rem;line-height:1.4;font-weight:400;color:#557086}
+.occupation-search-results button:hover,.occupation-search-results button.active,.occupation-search-results button:focus-visible{background:#eff6fb;border-color:#89b7d0;outline:0}
+.occupation-search-results .occupation-custom{background:#f8f3ff;border-color:#d4c5e8}
+.occupation-search-status{margin:6px 0;color:#395f77;font-size:.85rem;line-height:1.45}
+.occupation-search-attribution{margin:6px 0 2px;color:#687f8d;font-size:.75rem;line-height:1.4}
+.occupation-search-attribution a{color:#27658e;text-decoration:underline}
+@media(max-width:650px){.occupation-search-results{max-height:280px}}
