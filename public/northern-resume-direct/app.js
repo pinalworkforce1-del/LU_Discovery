@@ -527,10 +527,32 @@
     importStatus('Résumé imported as draft source material and saved automatically. Review and organize your experience in the next step.');
     renderResumeBuilder();
   };
-  if($('rbSaveLater')) $('rbSaveLater').onclick=()=>{const d=resumeData();syncActiveExperience(d);d.step=resumeStep;d.savedForLaterAt=new Date().toISOString();saveState();route('map');setTimeout(()=>{const note=document.createElement('div');note.className='save-later-toast';note.innerHTML='<strong>Progress saved.</strong><span>Résumé Studio will reopen where you left off.</span>';document.body.appendChild(note);setTimeout(()=>note.classList.add('show'),30);setTimeout(()=>{note.classList.remove('show');setTimeout(()=>note.remove(),250)},3500)},50)};
+  if($('rbSaveLater')) $('rbSaveLater').onclick=async()=>{
+    const d=resumeData();syncActiveExperience(d);d.step=resumeStep;d.savedForLaterAt=new Date().toISOString();saveState();
+    const btn=$('rbSaveLater');btn.disabled=true;
+    try{
+      const ok=await window.LEVELUP_NOVA_R2W?.flush?.();
+      if(!ok){alert('Your draft remains saved on this device, but Level Up cloud saving has not been confirmed. Please try again.');return;}
+      route('map');
+    }finally{btn.disabled=false}
+  };
   if($('rbDraftSummary')) $('rbDraftSummary').onclick=rosieBuildSummary;
   $('rbPrev').onclick=()=>{ if(resumeStep>0){resumeStep--; resumeData().step=resumeStep; saveState(); renderResumeBuilder();} };
-  $('rbNext').onclick=()=>{ if(!validateResumeStep()){ alert('Complete the required fields on this step before continuing.'); return; } const d=resumeData(); if(resumeStep<3){resumeStep++;d.step=resumeStep;saveState();renderResumeBuilder();}else{d.complete=true;d.completedAt=new Date().toISOString();saveState();renderResumeBuilder();updateOverall();setTimeout(()=>route('map'),350);} };
+  $('rbNext').onclick=async()=>{
+    if(!validateResumeStep()){alert('Complete the required fields on this step before continuing.');return}
+    const d=resumeData();
+    if(resumeStep<3){resumeStep++;d.step=resumeStep;saveState();renderResumeBuilder();return}
+    const btn=$('rbNext');btn.disabled=true;btn.textContent='Saving completed résumé…';
+    try{
+      d.complete=true;d.completedAt=new Date().toISOString();saveState();
+      await window.LEVELUP_NOVA_R2W.complete();
+      renderResumeBuilder();updateOverall();
+      alert('Your completed résumé version is saved to Level Up.');route('map');
+    }catch(error){
+      d.complete=false;saveState();renderResumeBuilder();
+      alert(error.message||'Level Up could not confirm completion. Your draft remains saved.');
+    }finally{btn.disabled=false}
+  };
   $('listenBtn').onclick=()=>{ state.audioOn=!state.audioOn; saveState(); updateAudioControl(); if(state.audioOn) playPrompt(scenes[state.currentScene]); else stopAudio(); };
   $('replayBtn').onclick=()=>{ if(lastImpact) playImpact(lastImpact.s,lastImpact.k); };
   $('ccBtn').onclick=()=>{ state.ccOn=!state.ccOn; saveState(); $('ccBtn').textContent=state.ccOn?'CC':'CC Off'; $('promptCaption').classList.toggle('show',state.ccOn); $('impactCaption').classList.toggle('show',state.ccOn&&!$('inlineFeedback').hidden); };
