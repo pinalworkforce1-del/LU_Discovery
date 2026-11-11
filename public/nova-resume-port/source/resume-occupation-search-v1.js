@@ -7,7 +7,7 @@
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalize=s=>String(s||'').trim().toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ');
-const fullUrl='https://pinalworkforce1-del.github.io/Northern-BOOST/preview-v2/ready2work/onet-occupation-catalog-v31.json';
+const fullUrl='onet-occupation-catalog-v31.json';
 let dataPromise=null,records=[],catalogReady=false,controller=null,version=null;
 function load(){
  if(dataPromise)return dataPromise;
