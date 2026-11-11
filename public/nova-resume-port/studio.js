@@ -4,6 +4,8 @@ const $=id=>document.getElementById(id);
 const URL='https://dnijrzotfyvmmnmueknk.supabase.co',KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc';
 const LOCAL='levelup-nova-studio-draft-v1';
 const source=new URLSearchParams(location.search).get('source')||'resume-district';
+$('resumeBuilderForm')?.addEventListener('submit',e=>e.preventDefault());
+document.querySelectorAll('[data-route="map"]').forEach(b=>b.addEventListener('click',()=>{location.href='https://pinalworkforce1-del.github.io/Level_Up_Portal/career-tree-next/ready-2-work/#map'}));
 const empty=()=>({step:0,target:'',summary:'',skills:'',education:'',jobDescription:'',contact:{name:'',email:'',phone:'',location:''},experiences:[{role:'',employer:'',startDate:'',endDate:'',experience:'',evidence:'',bullets:[]}],activeExperience:0,versions:[{name:'Résumé 1',target:'',summary:'',format:'hybrid'}],activeVersion:0,integrity:false,ready:false});
 let d=empty(),loading=true,timer,existingMaster=null,cloudLoaded=false;
 let authenticatedUserId=null;
@@ -60,7 +62,7 @@ $('rbSaveLater').onclick=async()=>{save();const ok=await saveCloud();status(ok?'
 $('resumeBackBtn').onclick=()=>{location.href=source==='ready2work'?'https://pinalworkforce1-del.github.io/Level_Up_Portal/career-tree-next/ready-2-work/#map':'https://pinalworkforce1-del.github.io/LU_Discovery/'};
 document.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>{d.versions[d.activeVersion].format=b.dataset.format;d.resumeFormat=b.dataset.format;save();renderPreview()});
 // Job-alignment analysis is bound by the extracted evidence workflow.
-$('rbTogglePreview').onclick=()=>document.querySelector('.resume-workspace')?.classList.toggle('alignment-preview-open');
+// Preview toggle is managed by the evidence workflow; preserve its accessible label.
 $('rbResumeUpload').onchange=async event=>{const file=event.target.files?.[0];if(!file)return;const ext=file.name.split('.').pop().toLowerCase();if(!['txt','pdf','docx'].includes(ext)){status('Choose a TXT, PDF, or DOCX résumé');return}if(file.size>5*1024*1024){status('Résumé must be smaller than 5 MB');return}status('Reading résumé locally…');try{let content='';if(ext==='txt')content=await file.text();if(ext==='docx'){if(!window.mammoth)throw Error('DOCX reader unavailable');content=(await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value||''}if(ext==='pdf'){if(!window.pdfjsLib)throw Error('PDF reader unavailable');const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const pages=[];for(let i=1;i<=Math.min(pdf.numPages,20);i++){const page=await pdf.getPage(i);pages.push((await page.getTextContent()).items.map(x=>x.str||'').join(' '))}content=pages.join('\\n')}content=content.replace(/\\0/g,'').trim();if(!content)throw Error('No selectable text found. Try a text-based résumé.');$('rbImportedText').value=content.slice(0,60000);$('rbImportReview').hidden=false;status('Review imported text before adding it as source evidence.')}catch(error){status(error.message||'Import failed')}};
 $('rbApplyImport').onclick=()=>{const content=$('rbImportedText').value.trim();if(!content){status('No imported text to review');return}d.importedResume={text:content,fileName:$('rbResumeUpload').files?.[0]?.name||'Imported résumé',reviewedAt:new Date().toISOString()};save();status('Imported source saved for review. No claims were automatically added.')};
 restore();
