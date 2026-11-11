@@ -55,7 +55,55 @@ async function callNova(mode,evidence){
  if(!r.ok)throw Error(data.message||data.error||'Nova is unavailable');
  return data;
 }
-async function buildBullet(){const e=active(),btn=$('rbBuildBullet'),box=$('rbBulletCoach');const story=(e.evidence||'').trim();if(!story){status('Describe a real responsibility or accomplishment first');return}btn.disabled=true;btn.textContent='Nova is working…';try{const result=await callNova('bullet',{targetRole:d.target,skill:d.skills,story,context:[e.role,e.employer].filter(Boolean).join(' • ')});box.hidden=false;if(result.needsClarification||result.integrityFailed){box.textContent=result.question||'Nova needs another factual detail before drafting.';return}const drafts=[result.clearDirect,result.skillsForward].filter(Boolean);if(!drafts.length)throw Error('Nova did not return a résumé bullet');box.innerHTML='<strong>Choose a draft based on your actual experience</strong>';const choices=$('rbBulletChoices');choices.innerHTML='';drafts.forEach((draft,i)=>{const b=document.createElement('button');b.type='button';b.className='rosie-draft';b.textContent=(i===0?'Clear & Direct: ':'Skills Forward: ')+draft;b.onclick=()=>{e.bullets ||= [];if(!e.bullets.includes(draft))e.bullets.push(draft);save();render();status('Verified bullet added to résumé')};choices.appendChild(b)})}catch(err){status(err.message)}finally{btn.disabled=false;btn.textContent='✦ Nova: Turn This Into Résumé Evidence'}}
+// Nova may need more than one participant answer before there is enough evidence
+// for a truthful bullet. Store clarification with the active experience, not the job target.
+async function requestBulletDraft(exp,extraAnswer=''){
+ const story=String(exp.evidence||'').trim();
+ if(!story){status('Describe a real responsibility or accomplishment first');return}
+ const prior=exp.novaClarifications||[];
+ if(extraAnswer.trim()&&exp.novaPendingQuestion){
+  prior.push({question:exp.novaPendingQuestion,answer:extraAnswer.trim()});
+  exp.novaClarifications=prior;
+  exp.novaPendingQuestion='';
+ }
+ const combined=[story,...prior.map(item=>'Nova asked: '+item.question+'\\nParticipant answered: '+item.answer)].join('\\n');
+ const btn=$('rbBuildBullet'),box=$('rbBulletCoach'),choices=$('rbBulletChoices');
+ btn.disabled=true;btn.textContent='Nova is reviewing your experience…';
+ choices.innerHTML='';
+ box.hidden=false;box.replaceChildren();
+ try{
+  const result=await callNova('bullet',{targetRole:d.target,skill:d.skills,story:combined,context:[exp.role,exp.employer].filter(Boolean).join(' • ')});
+  // A short truthful question is not an error: give the participant a way to answer it.
+  if(result.needsClarification||result.integrityFailed){
+   if((exp.novaClarifications||[]).length>=3){
+    box.textContent='Nova still needs more verified details. Add more specific tasks to “What did you do in this role?” or ask your career coach for help.';
+   }else{
+    exp.novaPendingQuestion=result.question||'What specific tasks did you carry out?';
+    const wrap=document.createElement('div');wrap.className='rosie-clarification';
+    const title=document.createElement('strong');title.textContent='Nova needs one more detail';
+    const prompt=document.createElement('p');prompt.textContent=exp.novaPendingQuestion;
+    const label=document.createElement('label');label.textContent='Your answer';label.htmlFor='rbNovaAnswer';
+    const answer=document.createElement('textarea');answer.id='rbNovaAnswer';answer.rows=3;answer.placeholder='Describe the actual steps, tools, people you worked with or results. Only include things you really did.';
+    const send=document.createElement('button');send.type='button';send.id='rbNovaContinue';send.textContent='Continue with Nova →';
+    send.onclick=()=>{const reply=answer.value.trim();if(!reply){answer.focus();status('Answer Nova’s question or add more details to your experience first');return}void requestBulletDraft(exp,reply)};
+    wrap.append(title,prompt,label,answer,send);box.append(wrap);answer.focus();
+   }
+   save();return;
+  }
+  exp.novaPendingQuestion='';
+  const drafts=[result.clearDirect,result.skillsForward].filter(x=>typeof x==='string'&&x.trim());
+  if(!drafts.length)throw Error('Nova did not return a résumé bullet');
+  const intro=document.createElement('strong');intro.textContent='Choose the wording that accurately describes what you did';box.append(intro);
+  drafts.forEach((draft,i)=>{
+   const b=document.createElement('button');b.type='button';b.className='rosie-draft';
+   b.textContent=(i===0?'Clear & Direct: ':'Skills Forward: ')+draft;
+   b.onclick=()=>{exp.bullets ||= [];if(!exp.bullets.includes(draft))exp.bullets.push(draft);exp.novaClarifications=[];save();render();status('Reviewed résumé bullet added. Your original evidence remains saved.')};
+   choices.appendChild(b);
+  });
+  save();
+ }catch(err){box.textContent=err.message||'Nova could not complete this draft';status('Nova could not complete this draft')}finally{btn.disabled=false;btn.textContent='✦ Nova: Turn This Into Résumé Evidence'}
+}
+async function buildBullet(){return requestBulletDraft(active())}
 async function buildSummary(){const btn=$('rbDraftSummary');btn.disabled=true;try{const result=await callNova('summary',{targetRole:d.target,experience:d.experiences.map(e=>[e.role,e.employer,...(e.bullets||[])].join(' • ')).join('\n'),evidence:d.experiences.flatMap(e=>e.bullets||[]).join('\n'),skills:d.skills,education:d.education});if(result.needsClarification){status(result.question||'Nova needs more details');return}if(!result.summary)throw Error('Nova did not return a summary');d.summary=result.summary;d.versions[d.activeVersion].summary=d.summary;save();render();status('Nova summary ready for your review')}catch(err){status(err.message)}finally{btn.disabled=false}}
 function showCoach(id,html){const el=$(id);if(el){el.hidden=false;el.innerHTML=html}}
 function syncExperience(){const e=active();e.experience=e.experience||[e.role,e.employer].filter(Boolean).join(' at ');d.experience=e.experience;d.evidence=e.evidence||'';d.role=e.role||'';d.employer=e.employer||''}
