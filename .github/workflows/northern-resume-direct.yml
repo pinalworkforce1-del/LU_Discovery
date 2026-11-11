@@ -1,0 +1,35 @@
+name: Direct Northern Resume Port Browser Verification
+on:
+  push:
+    branches: ['northern-resume-direct-copy-20261111']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install test runtime
+        run: |
+          npm ci
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Start Vite test server
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 8765 --strictPort >/tmp/northern-direct.log 2>&1 &
+          for i in $(seq 1 45); do
+            curl -fsS http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/northern-direct.log
+          exit 1
+      - name: Browser verification with isolated Supabase and Nova mocks
+        run: node tests/northern-resume-direct.smoke.cjs
