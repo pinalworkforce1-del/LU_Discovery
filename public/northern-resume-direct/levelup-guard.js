@@ -48,6 +48,8 @@
     localStorage.setItem(STORAGE,JSON.stringify({resumeBuilder:d,participantName:d.contact?.name||'',savedAt:new Date().toISOString()}));
    }else localStorage.removeItem(STORAGE);
   }
+  // This isolated test route always opens the source four-step résumé builder, not the Northern course map.
+  if(location.hash!=='#resume-builder')history.replaceState(null,'','#resume-builder');
   window.LEVELUP_NOVA_R2W={client,userId:uid,verified:true,storageKey:STORAGE,scopedKey:scoped};
   const scripts=['course-data.js','resume-evidence-review-v1.js','resume-occupation-titles-v1.js','resume-occupation-search-v1.js','resume-format-v1.js','app.js','resume-polish-v1.js','resume-strategy-v1.js','interview-landing-v1.js','levelup-resume-cloud.js'];
   for(const src of scripts){
