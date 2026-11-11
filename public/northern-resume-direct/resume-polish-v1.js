@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'boost-northern-r2w-v1';
+  const STORAGE_KEY = 'levelup-northern-direct-r2w-v1';
   const PATCH_VERSION = 'R2W45';
   const $ = id => document.getElementById(id);
   const nativeSetItem = Storage.prototype.setItem;
@@ -211,7 +211,7 @@
     organizeBtn.disabled = !raw.trim();
     suggestionsBox.innerHTML = suggestions.length
       ? `<span class="skill-suggestion-label">Supported by your experience:</span>${suggestions.map(x => `<button type="button" class="skill-suggestion-chip" data-skill-add="${escapeAttr(x)}">＋ ${escapeHtml(x)}</button>`).join('')}`
-      : '<span class="skill-suggestion-label">No additional skill suggestions yet. Keep building verified experience and Rosie will keep checking.</span>';
+      : '<span class="skill-suggestion-label">No additional skill suggestions yet. Keep building verified experience and Nova will keep checking.</span>';
   }
   function organizeSkills() {
     const el = $('rbSkills');
@@ -340,11 +340,11 @@
     card.id = 'rbSkillsCoachCard';
     card.className = 'skills-coach-card';
     card.innerHTML = `
-      <span class="eyebrow">ROSIE'S SKILLS REVIEW</span>
+      <span class="eyebrow">NOVA'S SKILLS REVIEW</span>
       <strong>Make your skills easy to scan.</strong>
       <p id="rbSkillsFeedback">Add skills you can explain or demonstrate. I’ll help organize them for the résumé.</p>
       <div id="rbSkillSuggestions" class="skill-suggestions"></div>
-      <button id="rbOrganizeSkills" class="rosie-ai-btn" type="button">✦ Rosie: Organize & Format My Skills</button>`;
+      <button id="rbOrganizeSkills" class="rosie-ai-btn" type="button">✦ Nova: Organize & Format My Skills</button>`;
     label.insertAdjacentElement('afterend', card);
     $('rbOrganizeSkills').addEventListener('click', organizeSkills);
     card.addEventListener('click', e => {
@@ -361,7 +361,7 @@
     panel.id = 'rbPolishPanel';
     panel.className = 'resume-polish-card';
     panel.innerHTML = `
-      <span class="eyebrow">ROSIE'S FINAL POLISH CHECK</span>
+      <span class="eyebrow">NOVA'S FINAL POLISH CHECK</span>
       <strong>Formatting, capitalization & consistency</strong>
       <p>Before you finish, I’ll flag presentation issues that can make a good résumé look unfinished. These fixes never add experience or qualifications.</p>
       <div id="rbPolishIssues" class="polish-issues"></div>
