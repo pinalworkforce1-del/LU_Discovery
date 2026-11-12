@@ -3,7 +3,10 @@ const assert = require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:1400,height:1000}});
- const errors=[],requests=[];
+ const errors=[],requests=[],completedVersions=[];
+ page.on('console',msg=>{if(msg.text().startsWith('LEVELUP_SAVED_VERSION:')){try{completedVersions.push(JSON.parse(msg.text().slice('LEVELUP_SAVED_VERSION:'.length)))}catch(e){errors.push(e.message)}}});
+ // Do not open the production Level Up UI in the isolated test.
+ await page.route('https://pinalworkforce1-del.github.io/Level_Up_Portal/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Level Up return intercepted by smoke test</title>'}));
  page.on('pageerror',e=>errors.push(e.stack||e.message));
  page.on('dialog',d=>d.accept());
  await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',route=>route.fulfill({contentType:'application/javascript',body:
@@ -13,7 +16,7 @@ const assert = require('node:assert/strict');
     from(table){return {
       select(){return {eq(){return {maybeSingle:async()=>({data:localStorage.getItem('__mock_master')?{master_data:JSON.parse(localStorage.getItem('__mock_master'))}:null,error:null})}}}},
       upsert:async(row)=>{if(table==='resume_profiles')localStorage.setItem('__mock_master',JSON.stringify(row.master_data));return {error:null}},
-      insert:row=>({select:()=>({single:async()=>{const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');a.push(row);localStorage.setItem('__mock_versions',JSON.stringify(a));return {data:{id:'10000000-0000-4000-8000-'+String(a.length).padStart(12,'0')},error:null}}})})
+      insert:row=>({select:()=>({single:async()=>{const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');a.push(row);localStorage.setItem('__mock_versions',JSON.stringify(a));console.log('LEVELUP_SAVED_VERSION:'+JSON.stringify(row));return {data:{id:'10000000-0000-4000-8000-'+String(a.length).padStart(12,'0')},error:null}}})})
     }}
   })};`
  }));
@@ -70,11 +73,12 @@ const assert = require('node:assert/strict');
   await page.locator('#rbIntegrity').check();
   await page.locator('#rbReady').check();
   await page.locator('#rbNext').click();
-  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('__mock_versions')||'[]').length===1,null,{timeout:20000});
-  const versions=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')||'[]'));
-  assert.equal(versions[0].version_data.contact.name,'Test Participant','Canonical participant name');
-  assert.equal(versions[0].version_data.bullets.length,1,'One verified version bullet');
-  assert.equal(versions[0].version_data.bullets[0].bullet.startsWith('Provided customer support'),true);
+  await page.waitForURL('https://pinalworkforce1-del.github.io/Level_Up_Portal/career-tree-next/ready-2-work/#map',{timeout:20000});
+  assert.equal(completedVersions.length,1,'A single completed Level Up résumé version was inserted before redirect');
+  const version=completedVersions[0].version_data;
+  assert.equal(version.contact.name,'Test Participant','Canonical participant name');
+  assert.equal(version.bullets.length,1,'One verified version bullet');
+  assert.equal(version.bullets[0].bullet.startsWith('Provided customer support'),true);
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('PASS direct Northern port: identity, stages, Nova clarification, select/highlight, explicit Add, replace, reload, save Level Up version');
  }catch(e){
