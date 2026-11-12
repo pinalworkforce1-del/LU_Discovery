@@ -1,0 +1,37 @@
+name: Package Isolated Northern Resume Preview
+on:
+  push:
+    branches: ['northern-resume-direct-copy-20261111']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build static preview
+        run: |
+          npm run build
+          test -s dist/northern-resume-direct/index.html
+          test -s dist/northern-resume-direct/app.js
+          test -s dist/northern-resume-direct/levelup-guard.js
+          test -s dist/northern-resume-direct/levelup-resume-cloud.js
+          mkdir -p preview
+          cp -R dist/northern-resume-direct/. preview/
+          test -s preview/index.html
+          echo 'Preview assets packaged without publishing or modifying existing GitHub Pages.'
+      - name: Upload staging site package
+        uses: actions/upload-artifact@v4
+        with:
+          name: level-up-northern-resume-direct-staging-site
+          path: preview/
+          if-no-files-found: error
+          retention-days: 14
