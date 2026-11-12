@@ -32,7 +32,7 @@ const assert = require('node:assert/strict');
    ]
   })});
  });
- await page.route('https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-staged-resume-ai',async route=>{
+ await page.route('https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-resume-ai-staging',async route=>{
   const val=JSON.parse(route.request().postData()||'{}');requests.push(val);
   let data={};
   if(val.mode==='bullet' && String(val.evidence?.currentEvidence||'').includes('football team captain')){
@@ -83,6 +83,12 @@ const assert = require('node:assert/strict');
   await page.locator('.rosie-reply-wrap textarea').fill('I checked inventory lists and organized items on shelves.');
   await page.locator('.rosie-send-btn').click();
   await page.locator('#rbCommitSelectedBullet').waitFor({timeout:15000});
+  const history=requests.filter(x=>x.mode==='bullet');
+  assert.equal(history[0].evidence.followUpCount,0,'First Nova question starts at zero');
+  assert.equal(history[1].evidence.followUpCount,1,'Second Nova request knows a clarification was already given');
+  assert.equal((await page.locator('#rbEvidence').inputValue()).includes('\\n'),false,'No literal escaped newline characters in evidence');
+  assert.ok((await page.locator('#rbEvidence').inputValue()).includes('\n'),'Follow-up answer separated by a real newline');
+
   assert.equal(await page.locator('#rbCommitSelectedBullet').isDisabled(),true,'No draft automatically selected');
   assert.equal(await page.locator('#rpExperienceList').getByText('Organized stock and supported customer requests',{exact:false}).count(),0,'Draft not auto-added');
   const buttons=page.locator('#rbBulletChoices [data-rb-draft]');
@@ -109,6 +115,8 @@ const assert = require('node:assert/strict');
   assert.ok((await page.locator('#luDiscoveryResults').textContent()).includes('✓ Added'),'Approved theme is marked complete after reload');
   await page.locator('#luDevelopNextAccomplishment').waitFor({state:'visible',timeout:15000});
   await page.locator('#luDiscoveryResults button').nth(1).click();
+  assert.equal(await page.locator('#rbBuildBullet').isHidden(),true,'One-click Nova coaching does not show duplicate action');
+
   assert.equal(await page.locator('#rbEvidence').inputValue(),'Served as football team captain.','Second accomplishment restores its own source');
   await page.locator('#rbCommitSelectedBullet').waitFor({timeout:15000});
   await page.locator('#rbBulletChoices [data-rb-draft]').first().click();
