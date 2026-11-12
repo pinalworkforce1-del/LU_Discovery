@@ -20,6 +20,18 @@ const assert = require('node:assert/strict');
     }}
   })};`
  }));
+ await page.route('https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-resume-discovery-staging',async route=>{
+  const val=JSON.parse(route.request().postData()||'{}');
+  assert.ok(val.narrative.includes('Honor Society'),'Discovery reads raw narrative');
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({
+   intro:'I found three accomplishments.',
+   items:[
+    {title:'School achievement',source:'Maintained a 4.0 GPA and joined the Honor Society.',category:'education'},
+    {title:'Team leadership',source:'Served as football team captain.',category:'leadership'},
+    {title:'Event coordination',source:'Coordinated volunteers and schedules for a school dance.',category:'experience'}
+   ]
+  })});
+ });
  await page.route('https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-staged-resume-ai',async route=>{
   const val=JSON.parse(route.request().postData()||'{}');requests.push(val);
   let data={};
@@ -44,6 +56,14 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('[data-resume-step="1"]').isVisible(),true,'Original experience step visible');
   await page.locator('#rbEmployer').fill('Volunteer Team');
   await page.locator('#rbRoleTitle').fill('Volunteer Coordinator');
+  await page.locator('#rbEvidence').fill('Maintained a 4.0 GPA and joined the Honor Society. Served as football team captain. Coordinated volunteers and schedules for a school dance.');
+  await page.locator('#luFindAccomplishments').click();
+  await page.locator('#luDiscoveryResults button').first().waitFor({timeout:15000});
+  assert.equal(await page.locator('#luDiscoveryResults button').count(),3,'Nova separates three accomplishments');
+  assert.equal(await page.locator('#rpExperienceList').getByText('Maintained a 4.0 GPA',{exact:false}).count(),0,'Discovery does not auto-add any accomplishment');
+  await page.locator('#luDiscoveryResults button').nth(2).click();
+  assert.equal(await page.locator('#rbEvidence').inputValue(),'Coordinated volunteers and schedules for a school dance.','Participant chooses a distinct theme');
+  assert.equal(await page.locator('#rbBulletChoices [data-rb-draft]').count(),0,'Choosing theme does not auto-draft a bullet');
   await page.locator('#rbEvidence').fill('I managed stock items and helped customers during special events.');
   await page.locator('#rbBuildBullet').click();
   await page.locator('.rosie-reply-wrap textarea').waitFor({timeout:15000});
