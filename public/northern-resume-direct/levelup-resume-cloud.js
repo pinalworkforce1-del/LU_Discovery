@@ -57,8 +57,8 @@
   const versions=Array.isArray(d.versions)?d.versions:[];
   const v=versions[d.activeVersion||0]||{};
   const experiences=Array.isArray(d.experiences)?d.experiences:[];
-  const bullets=experiences.flatMap(x=>(Array.isArray(x?.bullets)?x.bullets:[]).filter(x=>typeof x==='string'&&x.trim()).map(x=>({
-   bullet:x.trim(),text:x.trim(),role:toString(x?.role),employer:toString(x?.employer),source:'levelup-nova-staged-verified'
+  const bullets=experiences.flatMap(exp=>(Array.isArray(exp?.bullets)?exp.bullets:[]).filter(b=>typeof b==='string'&&b.trim()).map(b=>({
+   bullet:b.trim(),text:b.trim(),role:toString(exp?.role),employer:toString(exp?.employer),source:'levelup-nova-staged-verified'
   })));
   return {...prior,contact:{...(prior.contact||{}),...(d.contact||{})},
     role:toString(v.target||d.target),roleMode:'known',roleCode:toString(v.onetOccupationCode||''),
@@ -106,6 +106,20 @@
   }
   return false;
  }
+ function completedVersionFingerprint(d){
+  // The saved version is an immutable snapshot of résumé content, not every autosave.
+  // Editing content or changing the active targeted version must create a new snapshot.
+  const v=d.versions?.[d.activeVersion||0]||{};
+  return JSON.stringify({
+   activeVersion:d.activeVersion||0,target:v.target||d.target||'',
+   summary:v.summary||d.summary||'',contact:d.contact||{},
+   skills:d.skills||'',education:d.education||'',
+   experiences:(d.experiences||[]).map(x=>({
+    role:x.role||'',employer:x.employer||'',startDate:x.startDate||'',endDate:x.endDate||'',
+    bullets:(x.bullets||[]).filter(b=>typeof b==='string'&&b.trim())
+   }))
+  });
+ }
  async function complete(){
   const d=snapshot();
   if(!d?.complete)throw new Error('Finish verifying your résumé before completing.');
@@ -114,7 +128,8 @@
   const t=toString(d.versions?.[d.activeVersion||0]?.target||d.target).trim();
   const c=canonical(d,master);
   if(!t||!c.contact?.name||!c.bullets.some(b=>b.bullet.length>=16))throw new Error('Add a target, contact name, and reviewed bullet before completion.');
-  if(d.levelUpVersionSavedId)return d.levelUpVersionSavedId;
+  const fingerprint=completedVersionFingerprint(d);
+  if(d.levelUpVersionSavedId&&d.levelUpVersionFingerprint===fingerprint)return d.levelUpVersionSavedId;
   const {data,error}=await client.from('resume_versions').insert({
    user_id:uid,version_name:toString(d.versions?.[d.activeVersion||0]?.name||'Nova staged résumé'),
    target_role:t,occupation_code:toString(d.versions?.[d.activeVersion||0]?.onetOccupationCode||'')||null,
@@ -122,6 +137,7 @@
   }).select('id').single();
   if(error||!data?.id)throw error||new Error('Version save was not confirmed.');
   d.levelUpVersionSavedId=data.id;
+  d.levelUpVersionFingerprint=fingerprint;
   const state=read()||{};state.resumeBuilder=d;localStorage.setItem(KEY,JSON.stringify(state));
   schedule();await ensureSaved();
   say('Completed résumé version saved to Level Up');
