@@ -150,6 +150,8 @@ const assert = require('node:assert/strict');
   assert.equal(completedVersions.length,1,'A single completed Level Up résumé version was inserted before redirect');
   const version=completedVersions[0].version_data;
   assert.equal(version.contact.name,'Test Participant','Canonical participant name');
+  assert.equal(version.levelUpEntryPoint,'ready-2-work','Completed version records originating module');
+  assert.equal(version.levelUpResumeCompletionSource,'resume-rise','Ready 2 Work completion provenance is explicit');
   assert.equal(version.bullets.length,2,'Separate approved accomplishments appear as distinct résumé bullets');
   assert.equal(version.bullets[0].bullet.startsWith('Provided customer support'),true);
   // A second, blank résumé must never replace the saved original in the workspace.
@@ -181,6 +183,13 @@ const assert = require('node:assert/strict');
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.activeId===JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.items?.[0]?.id,null,{timeout:20000});
   await page.locator('#luResumeWorkspace select option').first().waitFor({state:'attached',timeout:20000});
   assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),1,'Switching back restores original résumé');
+  // A fresh launch from Resume District preserves that entry context on exit.
+  await page.route('https://pinalworkforce1-del.github.io/Resume_District/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Resume District return intercepted</title>'}));
+  await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=resume-district#resume-builder',{waitUntil:'domcontentloaded'});
+  await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
+  assert.equal(await page.evaluate(()=>window.LEVELUP_NOVA_R2W.origin),'resume-district','Origin persists from Resume District entry');
+  await page.evaluate(()=>window.LEVELUP_NOVA_R2W.navigateBack());
+  await page.waitForURL('https://pinalworkforce1-del.github.io/Resume_District/',{timeout:20000});
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('PASS direct Northern port: identity, stages, Nova clarification, select/highlight, explicit Add, replace, reload, save Level Up version');
  }catch(e){
