@@ -155,6 +155,19 @@ const assert = require('node:assert/strict');
   // A second, blank résumé must never replace the saved original in the workspace.
   await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=ready-2-work#resume-builder',{waitUntil:'domcontentloaded'});
   await page.locator('#luResumeWorkspace select option').first().waitFor({state:'attached',timeout:20000});
+  // Snapshot identity must be stable on repeat finish; changed verified content must create a new immutable version.
+  const initialVersionCount=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')||'[]').length);
+  const repeatId=await page.evaluate(()=>window.LEVELUP_NOVA_R2W.complete());
+  const duplicateCount=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')||'[]').length);
+  assert.equal(duplicateCount,initialVersionCount,'Completing an unchanged résumé does not insert a duplicate version');
+  assert.ok(repeatId,'Existing completed version ID is retained');
+  await page.locator('#rbSummary').fill('Updated summary demonstrating a new verified résumé snapshot.');
+  await page.evaluate(()=>window.LEVELUP_NOVA_R2W.flush());
+  const updatedId=await page.evaluate(()=>window.LEVELUP_NOVA_R2W.complete());
+  const changedVersions=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')||'[]'));
+  assert.equal(changedVersions.length,initialVersionCount+1,'Edited résumé creates a new saved version');
+  assert.notEqual(updatedId,repeatId,'Changed content gets a distinct completed-version ID');
+  assert.equal(changedVersions[0].version_data.summary,'Customer-focused volunteer with inventory and event support experience.','Historical version content remains intact');
   assert.equal(await page.locator('#luResumeWorkspace select option').count(),1,'Original résumé becomes the first workspace item');
   await page.locator('#luResumeWorkspace button').click();
   await page.waitForURL(url=>url.href.includes('/northern-resume-direct/index.html'),{timeout:20000});
