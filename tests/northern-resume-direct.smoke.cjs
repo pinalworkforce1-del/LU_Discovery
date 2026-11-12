@@ -3,8 +3,9 @@ const assert = require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:1400,height:1000}});
- const errors=[],requests=[],completedVersions=[];
+ const errors=[],requests=[],completedVersions=[],completedProgress=[];
  page.on('console',msg=>{if(msg.text().startsWith('LEVELUP_SAVED_VERSION:')){try{completedVersions.push(JSON.parse(msg.text().slice('LEVELUP_SAVED_VERSION:'.length)))}catch(e){errors.push(e.message)}}});
+ page.on('console',msg=>{if(msg.text().startsWith('LEVELUP_SAVED_PROGRESS:')){try{completedProgress.push(JSON.parse(msg.text().slice('LEVELUP_SAVED_PROGRESS:'.length)))}catch(e){errors.push(e.message)}}});
  // Do not open the production Level Up UI in the isolated test.
  await page.route('https://pinalworkforce1-del.github.io/Level_Up_Portal/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Level Up return intercepted by smoke test</title>'}));
  page.on('pageerror',e=>errors.push(e.stack||e.message));
@@ -15,7 +16,7 @@ const assert = require('node:assert/strict');
           getUser:async()=>({data:{user:{id:'00000000-0000-4000-8000-000000000001'}},error:null})},
     from(table){return {
       select(){return {eq(){return {maybeSingle:async()=>({data:localStorage.getItem('__mock_master')?{master_data:JSON.parse(localStorage.getItem('__mock_master'))}:null,error:null})}}}},
-      upsert:async(row)=>{if(table==='resume_profiles')localStorage.setItem('__mock_master',JSON.stringify(row.master_data));if(table==='module_progress'){const a=JSON.parse(localStorage.getItem('__mock_progress')||'[]');const idx=a.findIndex(x=>x.user_id===row.user_id&&x.module_id===row.module_id);if(idx>=0)a[idx]=row;else a.push(row);localStorage.setItem('__mock_progress',JSON.stringify(a));}return {error:null}},
+      upsert:async(row)=>{if(table==='resume_profiles')localStorage.setItem('__mock_master',JSON.stringify(row.master_data));if(table==='module_progress'){const a=JSON.parse(localStorage.getItem('__mock_progress')||'[]');const idx=a.findIndex(x=>x.user_id===row.user_id&&x.module_id===row.module_id);if(idx>=0)a[idx]=row;else a.push(row);localStorage.setItem('__mock_progress',JSON.stringify(a));console.log('LEVELUP_SAVED_PROGRESS:'+JSON.stringify(row));}return {error:null}},
       insert:row=>({select:()=>({single:async()=>{const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');a.push(row);localStorage.setItem('__mock_versions',JSON.stringify(a));console.log('LEVELUP_SAVED_VERSION:'+JSON.stringify(row));return {data:{id:'10000000-0000-4000-8000-'+String(a.length).padStart(12,'0')},error:null}}})})
     }}
   })};`
@@ -152,7 +153,7 @@ const assert = require('node:assert/strict');
   assert.equal(version.contact.name,'Test Participant','Canonical participant name');
   assert.equal(version.levelUpEntryPoint,'ready-2-work','Completed version records originating module');
   assert.equal(version.levelUpResumeCompletionSource,'resume-rise','Ready 2 Work completion provenance is explicit');
-  const progress=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_progress')||'[]'));
+  const progress=completedProgress;
   assert.equal(progress.length,1,'Exactly one source-specific module progression record written');
   assert.equal(progress[0].module_id,'ready2work-resume-rise','Ready 2 Work writes only Resume Rise completion');
   assert.equal(progress[0].is_complete,true,'Resume Rise completion confirmed');
