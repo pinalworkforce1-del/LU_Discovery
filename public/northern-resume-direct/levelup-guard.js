@@ -129,7 +129,7 @@
    else chooseReturn();
   }
   window.LEVELUP_NOVA_R2W={client,userId:uid,verified:true,storageKey:STORAGE,scopedKey:scoped,origin,navigateBack};
-  const scripts=['course-data.js','resume-evidence-review-v1.js','resume-occupation-titles-v1.js','resume-occupation-search-v1.js','resume-format-v1.js','app.js','resume-polish-v1.js','resume-strategy-v1.js','interview-landing-v1.js','levelup-resume-cloud.js'];
+  const scripts=['course-data.js','resume-evidence-review-v1.js','resume-occupation-titles-v1.js','resume-occupation-search-v1.js','resume-format-v1.js','app.js','resume-polish-v1.js','resume-strategy-v1.js','interview-landing-v1.js','levelup-resume-cloud.js','levelup-experience-discovery.js'];
   for(const src of scripts){
    await new Promise((resolve,reject)=>{
     const el=document.createElement('script');el.src='./'+src;el.onload=resolve;el.onerror=()=>reject(new Error('Could not load '+src));document.body.appendChild(el);
