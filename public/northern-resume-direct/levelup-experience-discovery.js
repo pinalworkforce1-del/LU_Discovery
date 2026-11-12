@@ -36,7 +36,11 @@
  restore.textContent='Put original story back in the text box';
  restore.style.cssText='margin:8px 0 3px';
  sourceActions.append(restore);source.append(sourceActions);
- section.append(heading,guidance,discover,status,results,source);
+ const next=document.createElement('button');
+ next.type='button';next.id='luDevelopNextAccomplishment';next.className='primary-btn';
+ next.style.cssText='display:none;margin:10px 0;padding:11px 16px';
+ next.textContent='→ Develop next accomplishment';
+ section.append(heading,guidance,discover,status,next,results,source);
  label.insertAdjacentElement('afterend',section);
  let pending=false;
  let currentExperience=-1;
@@ -51,6 +55,10 @@
   const d=read(),index=experienceIndex(),c=collectionFor(d,index);
   currentExperience=index;
   results.replaceChildren();
+  const coachButton=document.getElementById('rbBuildBullet');
+  // Avoid offering two apparently equivalent actions once Nova has organized a story.
+  if(coachButton)coachButton.hidden=!!c?.items?.length;
+  next.style.display='none';
   source.hidden=!c?.original;
   original.textContent=c?.original||'';
   restore.hidden=!c?.original;
@@ -61,6 +69,11 @@
   }
   discover.textContent='✦ Nova: Review these accomplishments';
   const n=c.items.length,done=c.items.filter(x=>x.status==='complete').length;
+  const pendingIndex=c.items.findIndex(x=>x.status==='pending');
+  if(done>0&&pendingIndex>=0&&c.activeIndex==null){
+   next.style.display='inline-block';
+   next.onclick=()=>results.querySelector('[data-accomplishment-index="'+pendingIndex+'"] button')?.click();
+  }
   status.textContent='Nova found '+n+' accomplishment'+(n===1?'':'s')+'. '+done+' added to your résumé. Choose another to develop whenever you are ready.';
   c.items.forEach((item,i)=>{
    const box=document.createElement('div');
@@ -91,8 +104,11 @@
     const coach=document.getElementById('rbBulletCoach');
     if(coach){coach.hidden=true;coach.replaceChildren()}
     render();
-    status.textContent='Developing: '+updated.items[i].title+'. Your other accomplishments and original story are saved below. Select a draft, then choose Add to résumé.';
-    field.focus();
+    status.textContent='Nova is coaching you through '+updated.items[i].title+'. Your original story and other accomplishments remain saved.';
+    const coaching=document.getElementById('rbBuildBullet');
+    if(coaching&&!coaching.disabled)coaching.click();
+    else status.textContent='Nova is already coaching a bullet. Finish that draft before starting another.';
+
    });
    box.append(title,category,progress,detail,use);results.append(box);
   });
@@ -133,6 +149,10 @@
    updated.activeIndex=null;
    persist(index,updated);
    render();
+   const remaining=updated.items.filter(x=>x.status==='pending').length;
+   status.textContent=remaining
+     ? 'Bullet added! '+remaining+' accomplishment'+(remaining===1?' remains':'s remain')+'. Select “Develop next accomplishment” when you’re ready.'
+     : 'All discovered accomplishments have been reviewed. You can continue to Skills & Education.';
   },100);
  },false);
  discover.addEventListener('click',async()=>{
