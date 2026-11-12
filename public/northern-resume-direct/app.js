@@ -268,6 +268,7 @@
     ], rg=rosieGuidance[resumeStep]; if($('rosieStepTitle'))$('rosieStepTitle').textContent=rg.title;if($('rosieStepMessage'))$('rosieStepMessage').textContent=rg.message;if($('rosieStepExample'))$('rosieStepExample').textContent=rg.example;
     if(resumeStep===1){syncActiveExperience(d);const bx=d.experiences[d.activeExperience||0]||{};const bl=$('rbBulletList');if(bl){const bullets=(bx.bullets||[]).filter(Boolean);bl.innerHTML=bullets.length?bullets.map((b,i)=>'<div class="saved-bullet"><span>Bullet '+(i+1)+'</span><p>'+escapeHtml(b)+'</p></div>').join(''):'<div class="empty-bullets">No résumé bullets saved yet. Tell Nova what you did, then build the first bullet.</div>';}const list=$('rbExperienceList');if(list){list.innerHTML=d.experiences.map((x,i)=>'<button type="button" class="experience-chip '+(i===d.activeExperience?'active':'')+'" data-exp-index="'+i+'"><span>Experience '+(i+1)+'</span><small>'+(escapeHtml(([x.role,x.employer].filter(Boolean).join(' • ')).slice(0,48))||'New employer / role')+'</small></button>').join('');list.querySelectorAll('[data-exp-index]').forEach(b=>b.onclick=()=>loadExperience(d,Number(b.dataset.expIndex)));}}
     renderResumePreview();
+    if(resumeStep===1)window.dispatchEvent(new Event('levelup-nova-discovery-refresh'));
     if(resumeStep===2)evidenceWorkflow?.render();
     document.querySelector('.resume-workspace')?.classList.remove('alignment-preview-open');
     if($('rbTogglePreview'))$('rbTogglePreview').textContent='Show résumé preview';
@@ -588,6 +589,15 @@
   $('printCertificateBtn').onclick=()=>window.print();
   $('resetBtn').onclick=()=>{alert('To preserve your existing Level Up progress, this isolated résumé test cannot reset the whole course.');};
 
+  // Persist Nova's discovery backlog inside the same résumé and cloud-save pathway.
+  window.addEventListener('levelup-nova-discovery-update',event=>{
+    const detail=event.detail;
+    if(!detail||!Number.isInteger(detail.index)||detail.index<0)return;
+    const d=resumeData();
+    d.novaDiscoveryCollections=d.novaDiscoveryCollections||{};
+    d.novaDiscoveryCollections[detail.index]=detail.collection;
+    saveState();
+  });
   window.addEventListener('boost-r2w-cloud-restored',event=>{
     const incoming=event.detail?.progress;
     if(!incoming||typeof incoming!=='object')return;
