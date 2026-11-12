@@ -77,10 +77,9 @@ const assert = require('node:assert/strict');
   assert.equal(initialDiscovery.items.length,3,'Discovery backlog stored inside résumé progress');
   assert.ok(initialDiscovery.original.includes('Maintained a 4.0 GPA'),'Raw story saved in résumé progress');
 
-  assert.equal(await page.locator('#rbBulletChoices [data-rb-draft]').count(),0,'Choosing theme does not auto-draft a bullet');
-  await page.locator('#rbEvidence').fill('I managed stock items and helped customers during special events.');
-  await page.locator('#rbBuildBullet').click();
+  // Choosing an accomplishment should start Nova coaching without a second button click.
   await page.locator('.rosie-reply-wrap textarea').waitFor({timeout:15000});
+  assert.equal(await page.locator('#rbBuildBullet').isHidden(),true,'Redundant purple coaching action hidden in discovery flow');
   await page.locator('.rosie-reply-wrap textarea').fill('I checked inventory lists and organized items on shelves.');
   await page.locator('.rosie-send-btn').click();
   await page.locator('#rbCommitSelectedBullet').waitFor({timeout:15000});
@@ -108,9 +107,9 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#luDiscoveryResults button').count(),3,'All discovered themes survive reload');
   assert.ok((await page.locator('#luDiscoveryOriginal').textContent()).includes('Served as football team captain'),'Unchanged original story survives reload');
   assert.ok((await page.locator('#luDiscoveryResults').textContent()).includes('✓ Added'),'Approved theme is marked complete after reload');
+  await page.locator('#luDevelopNextAccomplishment').waitFor({state:'visible',timeout:15000});
   await page.locator('#luDiscoveryResults button').nth(1).click();
   assert.equal(await page.locator('#rbEvidence').inputValue(),'Served as football team captain.','Second accomplishment restores its own source');
-  await page.locator('#rbBuildBullet').click();
   await page.locator('#rbCommitSelectedBullet').waitFor({timeout:15000});
   await page.locator('#rbBulletChoices [data-rb-draft]').first().click();
   await page.locator('#rbCommitSelectedBullet').click();
