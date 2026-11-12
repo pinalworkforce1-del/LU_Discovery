@@ -37,6 +37,60 @@
   item.resume=clone(resume);item.updatedAt=stamp();
   return workspace;
  }
+ // A link from My Résumés identifies the requested saved version explicitly.
+ // Load it as a separate editable workspace item; never replace another draft.
+ async function openRequestedSavedVersion(master){
+  const raw=new URLSearchParams(location.search).get('version');
+  if(!raw)return null;
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw))
+   throw new Error('Invalid saved résumé link.');
+  const {data,error}=await client.from('resume_versions')
+   .select('id,version_name,target_role,occupation_code,version_data')
+   .eq('id',raw).eq('user_id',uid).maybeSingle();
+  if(error||!data)throw new Error('This saved résumé could not be opened for your Level Up account.');
+  const workspace=normalizedWorkspace(master,snapshot());
+  let item=workspace.items.find(x=>x.sourceVersionId===raw);
+  if(!item){
+   const v=data.version_data||{};
+   const direct=v.levelUpNorthernDirectResume;
+   let draft;
+   if(direct&&typeof direct==='object'){
+    draft=clone(direct);
+   }else{
+    const target=toString(data.target_role||v.role||'');
+    const bullets=(Array.isArray(v.bullets)?v.bullets:[]).map(b=>typeof b==='string'?b:toString(b?.text||b?.bullet||b?.final||'')).filter(Boolean);
+    const skills=(Array.isArray(v.roleSkills)?v.roleSkills:[]).map(b=>typeof b==='string'?b:toString(b?.skill||b?.name||'')).filter(Boolean);
+    draft=blankResume();
+    draft.contact={...draft.contact,...(v.contact||{})};
+    draft.target=target;draft.summary=toString(v.summary);
+    draft.education=toString(v.education);
+    draft.skills=skills.join(', ');
+    draft.experiences=[{role:'',employer:'',startDate:'',endDate:'',experience:'',evidence:'',bullets}];
+    draft.versions=[{name:toString(data.version_name||'Saved résumé'),target,
+      onetOccupationCode:toString(data.occupation_code||v.roleCode),
+      summary:draft.summary,jobDescription:'',format:'hybrid',visualStyle:'modern'}];
+   }
+   // Historical versions are immutable. Reopening one creates an editable draft,
+   // and its next completion will be saved as a NEW completed version.
+   delete draft.levelUpVersionSavedId;
+   delete draft.levelUpVersionFingerprint;
+   draft.complete=false;
+   draft.step=0;
+   item=makeItem(draft,toString(data.version_name||data.target_role||'Saved résumé'));
+   item.sourceVersionId=raw;
+   workspace.items.push(item);
+  }
+  workspace.activeId=item.id;
+  const next=await writeWorkspace(master,workspace);
+  const state=read()||{};
+  state.resumeBuilder=clone(item.resume);
+  localStorage.setItem(KEY,JSON.stringify(state));
+  localStorage.setItem(scopedKey,JSON.stringify(state));
+  history.replaceState(null,'',location.pathname+'?from='+
+   encodeURIComponent(ctx.origin||'resume-district')+'#resume-builder');
+  window.dispatchEvent(new CustomEvent('boost-r2w-cloud-restored',{detail:{progress:{resumeBuilder:item.resume}}}));
+  return next;
+ }
  async function writeWorkspace(master,workspace){
   const active=workspace.items.find(x=>x.id===workspace.activeId);
   if(!active)throw new Error('Selected résumé was not found.');
@@ -227,7 +281,13 @@
  window.addEventListener('online',schedule);
  (async()=>{
   try{
-   const master=await getMaster(),incoming=master.levelUpNorthernDirectResume;
+   let master=await getMaster();
+   if(new URLSearchParams(location.search).has('version')){
+    // Do not continue into the ordinary restore path until a requested version
+    // has been resolved; a failed link must never overwrite the current draft.
+    master=await openRequestedSavedVersion(master)||master;
+   }
+   const incoming=master.levelUpNorthernDirectResume;
    const local=snapshot();
    if(incoming&&typeof incoming==='object'){
     const remoteTime=Date.parse(incoming.lastEditedAt||'')||0;
@@ -244,6 +304,6 @@
    say('Level Up cloud connected');
    if(snapshot())schedule();
    await initializeWorkspaceUI();
-  }catch(e){ready=true;say('Cloud connection unavailable — draft remains on this device');}
+  }catch(e){ready=true;say(e?.message||'Cloud connection unavailable — draft remains on this device');}
  })();
 })();
