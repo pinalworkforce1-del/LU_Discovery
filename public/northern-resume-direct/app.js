@@ -275,7 +275,7 @@
   }
   function renderResumePreview(){ const d=resumeData();syncActiveExperience(d); $('rpName').textContent=d.contact?.name||state.participantName||'Your Name';if($('rpContact'))$('rpContact').textContent=[d.contact?.email,d.contact?.phone,d.contact?.location].filter(Boolean).join(' • '); $('rpTarget').textContent=d.versions[d.activeVersion]?.target||d.careerTarget||'Target job'; $('rpSummary').textContent=d.versions[d.activeVersion]?.summary||'Your professional summary will appear here.';const pl=$('rpExperienceList');if(pl){const xs=d.experiences.filter(x=>String(x.experience||'').trim()||String(x.evidence||'').trim());pl.innerHTML=xs.map((x,i)=>{const head=[x.role,x.employer].filter(Boolean).join(' • ')||('Experience '+(i+1));const dates=[x.startDate,x.endDate].filter(Boolean).join(' – ');const bullets=(x.bullets||[]).filter(Boolean);return '<div class="preview-experience"><strong>'+escapeHtml(head)+'</strong>'+(dates?'<small>'+escapeHtml(dates)+'</small>':'')+(bullets.length?'<ul>'+bullets.map(b=>'<li>'+escapeHtml(b)+'</li>').join('')+'</ul>':(x.evidence?'<p>'+escapeHtml(x.evidence)+'</p>':''))+'</div>'}).join('');$('rpExperience').hidden=xs.length>0;$('rpEvidence').hidden=xs.length>0;} $('rpExperience').textContent=d.experience||'Experience'; $('rpEvidence').textContent=d.evidence||'Evidence and accomplishments'; $('rpSkills').textContent=d.skills||'Skills'; $('rpEducation').textContent=d.education||'Education, training, and credentials'; window.R2WResumeFormat?.render(d); }
   // Thin Level Up AI adapter: same Northern request/response modes and UI.
-  const R2W_AI_URL='https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-staged-resume-ai';
+  const R2W_AI_URL='https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-resume-ai-staging';
   const R2W_AI_KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc';
   async function callR2WResumeAI(body){
     const ctx=window.LEVELUP_NOVA_R2W;
@@ -299,11 +299,10 @@
     if(current)current.novaPairLastApproved=null;if(!String(d.evidence||'').trim()){showResumeCoach('rbBulletCoach','<b>Tell me one thing you did in this role.</b><br>Use normal words. I’ll ask questions and help turn it into strong résumé evidence.');$('rbEvidence').focus();return}
     btn.disabled=true;btn.textContent='Nova is working…';choices.innerHTML='';showResumeCoach('rbBulletCoach','<b>Working from your real experience…</b><br>I won’t add facts you didn’t give me.');
     const askInline=(question,label)=>{
-      // A single clarification is sufficient to attempt a conservative draft.
+      // One clarification maximum. The staging AI drafts conservatively after that,
+      // omitting unsupported claims rather than reopening the same question.
       if(novaFollowUpCount>=1){
-        showResumeCoach('rbBulletCoach','<b>Let’s draft from what you have already shared.</b><br>Nova will leave out any detail that cannot be confirmed.');
-        choices.innerHTML='<button type="button" class="primary-btn" id="rbRetryConservative">Draft from my verified facts →</button>';
-        choices.querySelector('#rbRetryConservative').onclick=()=>void rosieBuildBullet();
+        showResumeCoach('rbBulletCoach','<b>Nova could not verify more detail.</b><br>Your original facts are preserved. You can edit the description and try again.');
         return;
       }
       novaFollowUpCount++;
