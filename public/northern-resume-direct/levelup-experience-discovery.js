@@ -115,7 +115,10 @@
   if(coachButton)coachButton.hidden=!!c?.items?.length;
   next.style.display='none';
   guide.hidden=true;
-  if(legacyActions)legacyActions.hidden=!!c?.items?.length;
+  if(legacyActions){
+   legacyActions.hidden=!!c?.items?.length;
+   legacyActions.style.display=c?.items?.length?'none':'';
+  }
 
   source.hidden=!c?.original;
   original.textContent=c?.original||'';
