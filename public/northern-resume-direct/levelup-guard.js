@@ -12,9 +12,53 @@
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'sb-'+REF+'-auth-token'}
  });
  if(!client){say('Level Up sign-in library is unavailable.');return}
+ async function signInOnStaging(){
+  // GitHub Pages sites use separate browser storage. Authenticate with the SAME
+  // existing Level Up email rather than assuming a session transfers domains.
+  const panel=document.createElement('form');
+  panel.style.cssText='display:grid;gap:12px;margin-top:16px';
+  const email=document.createElement('input');
+  email.type='email';email.required=true;email.autocomplete='email';
+  email.placeholder='Your existing Level Up email';
+  email.setAttribute('aria-label','Existing Level Up email');
+  const code=document.createElement('input');
+  code.type='text';code.inputMode='numeric';code.autocomplete='one-time-code';
+  code.placeholder='Email verification code';code.setAttribute('aria-label','Email verification code');
+  code.hidden=true;
+  const submit=document.createElement('button');submit.type='submit';submit.textContent='Send sign-in code';
+  submit.style.cssText='border:0;padding:12px 18px;border-radius:9px;background:#e1f4fc;color:#12374a;font-weight:700;cursor:pointer';
+  const status=document.createElement('p');status.setAttribute('role','status');
+  status.style.cssText='margin:0;font-size:13px';
+  panel.append(email,code,submit,status);
+  root.querySelector('.inner')?.append(panel);
+  say('Sign in with the email you already use for Level Up. No new account is created.');
+  let awaitingCode=false;
+  return await new Promise(resolve=>{
+   panel.addEventListener('submit',async event=>{
+    event.preventDefault();submit.disabled=true;status.textContent='Checking sign-in…';
+    try{
+     if(!awaitingCode){
+      const {error}=await client.auth.signInWithOtp({email:email.value.trim(),options:{shouldCreateUser:false}});
+      if(error)throw error;
+      awaitingCode=true;email.readOnly=true;code.hidden=false;code.required=true;
+      submit.textContent='Verify code';
+      status.textContent='Check your email for the Level Up sign-in code. If the email only contains a link, use the normal Level Up sign-in and contact the tester about code delivery.';
+      code.focus();
+     }else{
+      const {data,error}=await client.auth.verifyOtp({email:email.value.trim(),token:code.value.trim(),type:'email'});
+      if(error)throw error;
+      if(!data?.session)throw new Error('The sign-in code did not create a verified session.');
+      panel.remove();resolve(data.session);
+     }
+    }catch(err){status.textContent=err?.message||'Could not verify the email code.'}
+    finally{submit.disabled=false}
+   });
+  });
+ }
  try{
   const {data:sd,error:se}=await client.auth.getSession();
-  if(se||!sd?.session){say('Sign in to Level Up in this browser, then reopen this test page.');return}
+  if(se)throw se;
+  if(!sd?.session)await signInOnStaging();
   const {data:identity,error:ie}=await client.auth.getUser();
   const uid=identity?.user?.id;
   if(ie||!uid){say('We could not verify your Level Up session. Sign in again.');return}
