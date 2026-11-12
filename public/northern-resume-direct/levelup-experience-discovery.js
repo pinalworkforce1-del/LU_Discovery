@@ -42,6 +42,61 @@
  next.textContent='→ Develop next accomplishment';
  section.append(heading,guidance,discover,status,next,results,source);
  label.insertAdjacentElement('afterend',section);
+ // Keep post-save actions beside the approval controls, not above them where
+ // participants must scroll back and guess the next step.
+ const guide=document.createElement('section');
+ guide.id='luDiscoveryNextActions';
+ guide.hidden=true;
+ guide.style.cssText='border:1px solid #b8d5c6;border-radius:14px;background:#eef8f2;padding:16px;margin:14px 0;color:#183d32';
+ const guideTitle=document.createElement('strong');
+ guideTitle.id='luDiscoveryNextTitle';
+ guideTitle.style.cssText='display:block;font-size:17px;margin-bottom:6px';
+ const guideText=document.createElement('p');guideText.id='luDiscoveryNextText';
+ guideText.style.cssText='margin:0 0 12px;font-size:14px;line-height:1.5';
+ const guideButtons=document.createElement('div');
+ guideButtons.style.cssText='display:flex;flex-wrap:wrap;gap:9px';
+ const advance=document.createElement('button');
+ advance.id='luDiscoveryNext';advance.type='button';advance.className='primary-btn';
+ advance.textContent='→ Develop next accomplishment';
+ const another=document.createElement('button');
+ another.id='luDiscoveryAnother';another.type='button';another.className='secondary-btn';
+ another.textContent='＋ Add another bullet about this experience';
+ const finish=document.createElement('button');
+ finish.id='luDiscoveryFinish';finish.type='button';finish.className='secondary-btn';
+ finish.textContent='Continue to Skills & Education →';
+ guideButtons.append(advance,another,finish);
+ guide.append(guideTitle,guideText,guideButtons);
+ document.getElementById('rbBulletChoices')?.insertAdjacentElement('afterend',guide);
+ const legacyActions=document.getElementById('rbExperienceActions');
+ function launch(index){
+  results.querySelector('[data-accomplishment-index="'+index+'"] button')?.click();
+ }
+ advance.addEventListener('click',()=>{
+  const c=collectionFor(read(),experienceIndex());
+  const i=c?.items?.findIndex(x=>x.status==='pending')??-1;
+  if(i>=0)launch(i);
+ });
+ another.addEventListener('click',()=>{
+  const index=experienceIndex(),c=collectionFor(read(),index);
+  if(c){
+   const updated=JSON.parse(JSON.stringify(c));
+   updated.activeIndex=null;
+   updated.items.forEach(x=>{if(x.status==='in_progress')x.status='pending'});
+   persist(index,updated);
+  }
+  window.dispatchEvent(new Event('levelup-nova-coaching-reset'));
+  document.getElementById('rbAddBullet')?.click();
+  const coachButton=document.getElementById('rbBuildBullet');
+  if(coachButton)coachButton.hidden=false;
+  guide.hidden=true;
+  status.textContent='Tell Nova one more distinct thing you did in this experience, then use the coaching button below. Your previously approved bullets remain saved.';
+  field.focus();
+ });
+ finish.addEventListener('click',()=>{
+  const nextStep=document.getElementById('rbNext');
+  if(nextStep&&!nextStep.disabled)nextStep.click();
+ });
+
  let pending=false;
  let currentExperience=-1;
  const read=()=>{try{return JSON.parse(localStorage.getItem(STORAGE)||'{}').resumeBuilder||{}}catch{return {}}};
@@ -59,6 +114,9 @@
   // Avoid offering two apparently equivalent actions once Nova has organized a story.
   if(coachButton)coachButton.hidden=!!c?.items?.length;
   next.style.display='none';
+  guide.hidden=true;
+  if(legacyActions)legacyActions.hidden=!!c?.items?.length;
+
   source.hidden=!c?.original;
   original.textContent=c?.original||'';
   restore.hidden=!c?.original;
@@ -70,6 +128,16 @@
   discover.textContent='✦ Nova: Review these accomplishments';
   const n=c.items.length,done=c.items.filter(x=>x.status==='complete').length;
   const pendingIndex=c.items.findIndex(x=>x.status==='pending');
+  if(done>0&&c.activeIndex==null){
+   const remaining=c.items.filter(x=>x.status==='pending').length;
+   guide.hidden=false;
+   guideTitle.textContent='✓ Résumé bullet saved — what would you like to do next?';
+   guideText.textContent=remaining
+    ? 'You have '+remaining+' more discovered accomplishment'+(remaining===1?'':'s')+'. Choose the next one, add a different bullet about this experience, or continue to Skills & Education.'
+    : 'All your discovered accomplishments have been reviewed. You can add another distinct bullet or continue to Skills & Education.';
+   advance.hidden=remaining===0;
+  }
+
   if(done>0&&pendingIndex>=0&&c.activeIndex==null){
    next.style.display='inline-block';
    next.onclick=()=>results.querySelector('[data-accomplishment-index="'+pendingIndex+'"] button')?.click();
@@ -153,8 +221,9 @@
    render();
    const remaining=updated.items.filter(x=>x.status==='pending').length;
    status.textContent=remaining
-     ? 'Bullet added! '+remaining+' accomplishment'+(remaining===1?' remains':'s remain')+'. Select “Develop next accomplishment” when you’re ready.'
-     : 'All discovered accomplishments have been reviewed. You can continue to Skills & Education.';
+     ? 'Bullet saved. The next step is ready below your approved bullet.'
+     : 'Bullet saved. You can continue to Skills & Education.';
+   if(!guide.hidden)guide.scrollIntoView({behavior:'smooth',block:'nearest'});
   },100);
  },false);
  discover.addEventListener('click',async()=>{
