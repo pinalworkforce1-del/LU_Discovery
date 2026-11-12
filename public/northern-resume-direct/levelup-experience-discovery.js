@@ -99,7 +99,7 @@
     persist(index,updated);
     // Every distinct accomplishment is a new coaching session.
     window.dispatchEvent(new Event('levelup-nova-coaching-reset'));
-    field.value=(updated.items[i].workingText||updated.items[i].source).replace(/\\\\n/g,'\n');
+    field.value=(updated.items[i].workingText||updated.items[i].source).replace(/\\n/g,'\n');
     field.dispatchEvent(new Event('input',{bubbles:true}));
     const choices=document.getElementById('rbBulletChoices');
     choices?.replaceChildren();
