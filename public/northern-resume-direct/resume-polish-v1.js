@@ -345,7 +345,7 @@
       <p id="rbSkillsFeedback">Add skills you can explain or demonstrate. I’ll help organize them for the résumé.</p>
       <div id="rbSkillSuggestions" class="skill-suggestions"></div>
       <button id="rbOrganizeSkills" class="rosie-ai-btn" type="button">✦ Nova: Organize & Format My Skills</button>`;
-    label.insertAdjacentElement('afterend', card);
+    // Let Nova surface evidence-backed suggestions before asking participants to enter skills.\n    label.insertAdjacentElement('beforebegin', card);
     $('rbOrganizeSkills').addEventListener('click', organizeSkills);
     card.addEventListener('click', e => {
       const b = e.target.closest('[data-skill-add]');
