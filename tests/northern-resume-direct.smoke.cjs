@@ -84,7 +84,7 @@ const assert = require('node:assert/strict');
   await page.locator('#luResumeWorkspace select option').first().waitFor({timeout:20000});
   assert.equal(await page.locator('#luResumeWorkspace select option').count(),1,'Original résumé becomes the first workspace item');
   await page.locator('#luResumeWorkspace button').click();
-  await page.waitForURL(/northern-resume-direct\\/index.html/,{timeout:20000});
+  await page.waitForURL(url=>url.href.includes('/northern-resume-direct/index.html'),{timeout:20000});
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.items?.length===2,null,{timeout:20000});
   await page.locator('#luResumeWorkspace select option').nth(1).waitFor({timeout:20000});
   assert.equal(await page.locator('#rbTarget').inputValue(),'','New résumé begins without target');
