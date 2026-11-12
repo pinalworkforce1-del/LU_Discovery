@@ -65,6 +65,8 @@
     summary:toString(v.summary||d.summary),education:toString(d.education),bullets,
     experiences:JSON.parse(JSON.stringify(experiences)),
     levelUpNorthernDirectResume:JSON.parse(JSON.stringify(d)),
+    levelUpEntryPoint:ctx.origin||'direct',
+    levelUpResumeCompletionSource:ctx.origin==='ready-2-work'?'resume-rise':ctx.origin==='resume-district'?'resume-district':'direct',
     novaFinalized:true};
  }
  async function persist(){
