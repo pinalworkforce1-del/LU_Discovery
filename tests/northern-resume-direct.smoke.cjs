@@ -15,7 +15,7 @@ const assert = require('node:assert/strict');
           getUser:async()=>({data:{user:{id:'00000000-0000-4000-8000-000000000001'}},error:null})},
     from(table){return {
       select(){return {eq(){return {maybeSingle:async()=>({data:localStorage.getItem('__mock_master')?{master_data:JSON.parse(localStorage.getItem('__mock_master'))}:null,error:null})}}}},
-      upsert:async(row)=>{if(table==='resume_profiles')localStorage.setItem('__mock_master',JSON.stringify(row.master_data));return {error:null}},
+      upsert:async(row)=>{if(table==='resume_profiles')localStorage.setItem('__mock_master',JSON.stringify(row.master_data));if(table==='module_progress'){const a=JSON.parse(localStorage.getItem('__mock_progress')||'[]');const idx=a.findIndex(x=>x.user_id===row.user_id&&x.module_id===row.module_id);if(idx>=0)a[idx]=row;else a.push(row);localStorage.setItem('__mock_progress',JSON.stringify(a));}return {error:null}},
       insert:row=>({select:()=>({single:async()=>{const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');a.push(row);localStorage.setItem('__mock_versions',JSON.stringify(a));console.log('LEVELUP_SAVED_VERSION:'+JSON.stringify(row));return {data:{id:'10000000-0000-4000-8000-'+String(a.length).padStart(12,'0')},error:null}}})})
     }}
   })};`
@@ -152,6 +152,12 @@ const assert = require('node:assert/strict');
   assert.equal(version.contact.name,'Test Participant','Canonical participant name');
   assert.equal(version.levelUpEntryPoint,'ready-2-work','Completed version records originating module');
   assert.equal(version.levelUpResumeCompletionSource,'resume-rise','Ready 2 Work completion provenance is explicit');
+  const progress=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_progress')||'[]'));
+  assert.equal(progress.length,1,'Exactly one source-specific module progression record written');
+  assert.equal(progress[0].module_id,'ready2work-resume-rise','Ready 2 Work writes only Resume Rise completion');
+  assert.equal(progress[0].is_complete,true,'Resume Rise completion confirmed');
+  assert.equal(progress.some(x=>x.module_id==='resume-district'),false,'Resume District journey never auto-completed by résumé creation');
+
   assert.equal(version.bullets.length,2,'Separate approved accomplishments appear as distinct résumé bullets');
   assert.equal(version.bullets[0].bullet.startsWith('Provided customer support'),true);
   // A second, blank résumé must never replace the saved original in the workspace.
@@ -168,6 +174,8 @@ const assert = require('node:assert/strict');
   const updatedId=await page.evaluate(()=>window.LEVELUP_NOVA_R2W.complete());
   const changedVersions=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')||'[]'));
   assert.equal(changedVersions.length,initialVersionCount+1,'Edited résumé creates a new saved version');
+  assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_progress')||'[]'))).length,1,'Retargeting/updating does not duplicate progression records');
+
   assert.notEqual(updatedId,repeatId,'Changed content gets a distinct completed-version ID');
   assert.equal(changedVersions[0].version_data.summary,'Customer-focused volunteer with inventory and event support experience.','Historical version content remains intact');
   assert.equal(await page.locator('#luResumeWorkspace select option').count(),1,'Original résumé becomes the first workspace item');
@@ -188,6 +196,12 @@ const assert = require('node:assert/strict');
   await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=resume-district#resume-builder',{waitUntil:'domcontentloaded'});
   await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
   assert.equal(await page.evaluate(()=>window.LEVELUP_NOVA_R2W.origin),'resume-district','Origin persists from Resume District entry');
+  const beforeDistrict=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_progress')||'[]'));
+  await page.evaluate(()=>window.LEVELUP_NOVA_R2W.complete());
+  const afterDistrict=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_progress')||'[]'));
+  assert.equal(afterDistrict.length,beforeDistrict.length,'Resume District entry never writes Resume Rise progression');
+  assert.equal(afterDistrict.some(x=>x.module_id==='resume-district'),false,'Resume District journey completion remains independent');
+
   await page.evaluate(()=>window.LEVELUP_NOVA_R2W.navigateBack());
   await page.waitForURL('https://pinalworkforce1-del.github.io/Resume_District/',{timeout:20000});
   assert.equal(errors.length,0,errors.join('\n'));
