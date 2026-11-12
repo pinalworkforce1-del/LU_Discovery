@@ -49,6 +49,12 @@ const assert = require('node:assert/strict');
   await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
   assert.equal(await page.locator('#viewResumeBuilder').isVisible(),true,'Original résumé builder opened');
   assert.equal(await page.locator('#luResumeWorkspace').count(),1,'Workspace mounted after cloud connection');
+  assert.equal(await page.locator('.resume-builder-head').evaluate(el=>el.nextElementSibling?.id),'luResumeWorkspace','Workspace sits below the résumé heading');
+  assert.equal(await page.locator('#rbTarget').locator('xpath=..').textContent().then(s=>s.includes('BOOST/TalentSync')),false,'No backend branding in participant target help');
+  assert.ok((await page.locator('#rbEmployer').locator('xpath=..').textContent()).includes('work, school, or volunteer'),'School and volunteer roles are welcomed');
+  assert.equal(await page.locator('[data-resume-section="experience"] h3').textContent(),'Relevant Experience','First-job-friendly experience heading');
+  assert.equal(await page.locator('#rbSkillsCoachCard').evaluate(el=>el.nextElementSibling?.querySelector('#rbSkills')!==null),true,'Skills review comes before the participant skills field');
+
   await page.locator('#rbContactName').fill('Test Participant');
   await page.locator('#rbEmail').fill('test@example.invalid');
   await page.locator('#rbTarget').fill('Cashier');
