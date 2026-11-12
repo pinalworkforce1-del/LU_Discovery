@@ -15,10 +15,10 @@
   <header class="top"><div class="brand"><b>LEVEL UP • RESUME DISTRICT</b><h1>My Résumés</h1></div><a class="back" href="https://pinalworkforce1-del.github.io/Resume_District/">← Resume District</a></header>
   <section class="hero">
     <h2 style="margin-top:0">Your résumé workspace</h2>
-    <p>Your working résumé and saved targeted versions belong to your Level Up profile. Open one to update it, or start a new target without rebuilding your experience from scratch.</p>
+    <p>Your résumé drafts and completed targeted versions are saved with your Level Up profile. Open a completed version as a separate editable copy in Nova without replacing the original.</p>
     <div class="actions">
-      <a class="btn green" href="resume-builder-prototype.html">Open Current Working Résumé →</a>
-      <a class="btn gold" href="resume-builder-prototype.html">+ Create / Target a Résumé</a>
+      <a class="btn green" href="https://pinalworkforce1-del.github.io/Level-Up-Resume-Staging/?from=resume-district">Open Nova Résumé Workspace →</a>
+      <a class="btn gold" href="https://pinalworkforce1-del.github.io/Level-Up-Resume-Staging/?from=resume-district">+ Create / Target a Résumé in Nova</a>
     </div>
   </section>
   <div class="status" id="status">Loading your saved résumés…</div>
@@ -41,7 +41,7 @@ async function load(){
   const res=await fetch(SUPABASE_URL+'/rest/v1/resume_versions?user_id=eq.'+encodeURIComponent(uid)+'&select=id,version_name,target_role,occupation_code,created_at&order=created_at.desc',{headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+t}});
   if(!res.ok){$('status').textContent='Saved résumés could not be loaded right now.';$('versions').innerHTML='<div class="empty">Your current working résumé is still available in Resume Builder.</div>';return}
   const rows=await res.json();$('status').textContent=rows.length?rows.length+' saved résumé version'+(rows.length===1?'':'s'):'No saved targeted versions yet.';
-  $('versions').innerHTML=rows.length?rows.map(r=>'<article class="version"><div><h3>'+esc(r.target_role||r.version_name||'Saved Résumé')+'</h3><p>'+esc(r.version_name||'Level Up Resume')+(r.created_at?' • Saved '+fmt(r.created_at):'')+'</p>'+(r.occupation_code?'<span class="tag">O*NET '+esc(r.occupation_code)+'</span>':'')+'</div><a class="btn alt" href="resume-builder-prototype.html?version='+encodeURIComponent(r.id)+'">Open / Update →</a></article>').join(''):'<div class="empty">When you choose <b>Save Version</b> in Resume Builder, targeted copies will appear here.</div>';
+  $('versions').innerHTML=rows.length?rows.map(r=>'<article class="version"><div><h3>'+esc(r.target_role||r.version_name||'Saved Résumé')+'</h3><p>'+esc(r.version_name||'Level Up Resume')+(r.created_at?' • Saved '+fmt(r.created_at):'')+'</p>'+(r.occupation_code?'<span class="tag">O*NET '+esc(r.occupation_code)+'</span>':'')+'</div><a class="btn alt" href="https://pinalworkforce1-del.github.io/Level-Up-Resume-Staging/?from=resume-district&amp;version='+encodeURIComponent(r.id)+'">Open / Update →</a></article>').join(''):'<div class="empty">When you choose <b>Complete Résumé</b> in Nova Résumé Studio, targeted copies will appear here.</div>';
 }
 load();
 </script>
