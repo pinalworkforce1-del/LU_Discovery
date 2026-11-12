@@ -48,7 +48,7 @@ const assert = require('node:assert/strict');
   await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=ready-2-work#resume-builder',{waitUntil:'domcontentloaded'});
   await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
   assert.equal(await page.locator('#viewResumeBuilder').isVisible(),true,'Original résumé builder opened');
-  assert.equal(await page.locator('#luResumeWorkspace').count(),0,'Workspace mounts asynchronously after cloud ready');
+  assert.equal(await page.locator('#luResumeWorkspace').count(),1,'Workspace mounted after cloud connection');
   await page.locator('#rbContactName').fill('Test Participant');
   await page.locator('#rbEmail').fill('test@example.invalid');
   await page.locator('#rbTarget').fill('Cashier');
