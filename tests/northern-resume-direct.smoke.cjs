@@ -15,9 +15,16 @@ const assert = require('node:assert/strict');
     auth:{getSession:async()=>({data:{session:{access_token:'mock-account-token'}},error:null}),
           getUser:async()=>({data:{user:{id:'00000000-0000-4000-8000-000000000001'}},error:null})},
     from(table){return {
-      select(){return {eq(){return {maybeSingle:async()=>({data:localStorage.getItem('__mock_master')?{master_data:JSON.parse(localStorage.getItem('__mock_master'))}:null,error:null})}}}},
+      select(){const filters={};const selection={eq(k,v){filters[k]=v;return selection;},maybeSingle:async()=>{
+        if(table==='resume_versions'){
+          const versions=JSON.parse(localStorage.getItem('__mock_versions')||'[]');
+          const item=versions.find(x=>x.id===filters.id&&x.user_id===filters.user_id);
+          return {data:item||null,error:null};
+        }
+        return {data:localStorage.getItem('__mock_master')?{master_data:JSON.parse(localStorage.getItem('__mock_master'))}:null,error:null};
+      }};return selection;},
       upsert:async(row)=>{if(table==='resume_profiles')localStorage.setItem('__mock_master',JSON.stringify(row.master_data));if(table==='module_progress'){const a=JSON.parse(localStorage.getItem('__mock_progress')||'[]');const idx=a.findIndex(x=>x.user_id===row.user_id&&x.module_id===row.module_id);if(idx>=0)a[idx]=row;else a.push(row);localStorage.setItem('__mock_progress',JSON.stringify(a));console.log('LEVELUP_SAVED_PROGRESS:'+JSON.stringify(row));}return {error:null}},
-      insert:row=>({select:()=>({single:async()=>{const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');a.push(row);localStorage.setItem('__mock_versions',JSON.stringify(a));console.log('LEVELUP_SAVED_VERSION:'+JSON.stringify(row));return {data:{id:'10000000-0000-4000-8000-'+String(a.length).padStart(12,'0')},error:null}}})})
+      insert:row=>({select:()=>({single:async()=>{const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');const id='10000000-0000-4000-8000-'+String(a.length+1).padStart(12,'0');a.push({...row,id});localStorage.setItem('__mock_versions',JSON.stringify(a));console.log('LEVELUP_SAVED_VERSION:'+JSON.stringify(row));return {data:{id},error:null}}})})
     }}
   })};`
  }));
@@ -192,6 +199,40 @@ const assert = require('node:assert/strict');
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.activeId===JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.items?.[0]?.id,null,{timeout:20000});
   await page.locator('#luResumeWorkspace select option').first().waitFor({state:'attached',timeout:20000});
   assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),1,'Switching back restores original résumé');
+  // Selecting a historical saved-version card must open THAT version, without
+  // replacing the current working draft or mutating the completed snapshot.
+  const historicalId='20000000-0000-4000-8000-000000000001';
+  await page.evaluate(id=>{
+    const a=JSON.parse(localStorage.getItem('__mock_versions')||'[]');
+    a.push({id,user_id:'00000000-0000-4000-8000-000000000001',
+      version_name:'Historical event coordinator',target_role:'Event Coordinator',
+      occupation_code:'',version_data:{
+        contact:{name:'Historical Participant',email:'historical@example.invalid'},
+        role:'Event Coordinator',summary:'Previously saved historical summary.',
+        education:'High School Diploma',roleSkills:['Scheduling','Communication'],
+        bullets:[{bullet:'Coordinated student events, schedules, and tournament activities.'}]
+      }});
+    localStorage.setItem('__mock_versions',JSON.stringify(a));
+  },historicalId);
+  const preservedBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')).find(x=>x.id==='20000000-0000-4000-8000-000000000001'));
+  await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=resume-district&version='+historicalId+'#resume-builder',{waitUntil:'domcontentloaded'});
+  await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
+  await page.locator('#luResumeWorkspace select option').last().waitFor({state:'attached',timeout:15000});
+  await page.waitForFunction(()=>document.querySelector('#rbTarget')?.value==='Event Coordinator',null,{timeout:15000});
+  assert.equal(await page.locator('#rbTarget').inputValue(),'Event Coordinator','Selected historical version opens its own target');
+  assert.equal(await page.locator('#rbSummary').inputValue(),'Previously saved historical summary.','Selected version restores its own content');
+  assert.equal((await page.locator('#rpExperienceList').textContent()).includes('Coordinated student events'),true,'Selected version retains historical bullets');
+  const newlyOpened=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_master')).levelUpNorthernResumeWorkspace);
+  assert.equal(newlyOpened.items.filter(x=>x.sourceVersionId==='20000000-0000-4000-8000-000000000001').length,1,'One linked editable copy of selected version');
+  assert.equal(newlyOpened.items.some(x=>x.resume.experiences?.some(y=>y.bullets?.includes('Provided customer support while maintaining organized inventory'))),true,'Original separate working résumé preserved');
+  const preservedAfter=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')).find(x=>x.id==='20000000-0000-4000-8000-000000000001'));
+  assert.deepEqual(preservedAfter,preservedBefore,'Opening historical version does not alter immutable saved snapshot');
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
+  assert.equal(await page.locator('#rbTarget').inputValue(),'Event Coordinator','Selected historical version persists after reload');
+  const workspaceAfterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_master')).levelUpNorthernResumeWorkspace);
+  assert.equal(workspaceAfterReload.items.filter(x=>x.sourceVersionId===historicalId).length,1,'Reload does not create duplicate workspace copies');
+
   // A fresh launch from Resume District preserves that entry context on exit.
   await page.route('https://pinalworkforce1-del.github.io/Resume_District/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Resume District return intercepted</title>'}));
   await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=resume-district#resume-builder',{waitUntil:'domcontentloaded'});
