@@ -85,9 +85,9 @@
   preview.classList.remove('resume-style-classic','resume-style-clean');
   preview.classList.add('resume-style-modern');
   const headings={
-   chronological:{experience:'Professional Experience',skills:'Skills'},
-   hybrid:{experience:'Professional Experience',skills:'Relevant Skills'},
-   functional:{experience:'Employment History',skills:'Core Skills'}
+   chronological:{experience:'Relevant Experience',skills:'Skills'},
+   hybrid:{experience:'Relevant Experience',skills:'Relevant Skills'},
+   functional:{experience:'Relevant Experience',skills:'Core Skills'}
   };
   const byName={};
   [...container.querySelectorAll('[data-resume-section]')].forEach(node=>{byName[node.dataset.resumeSection]=node;});
