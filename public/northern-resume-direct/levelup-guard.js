@@ -9,7 +9,7 @@
  const KEY='sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc';
  const STORAGE='levelup-northern-direct-r2w-v1';
  const client=window.supabase?.createClient(URL,KEY,{
-  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'sb-'+REF+'-auth-token'}
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'sb-'+REF+'-auth-token'}
  });
  if(!client){say('Level Up sign-in library is unavailable.');return}
  async function signInOnStaging(){
@@ -23,28 +23,29 @@
   email.setAttribute('aria-label','Existing Level Up email');
   const code=document.createElement('input');
   code.type='text';code.inputMode='numeric';code.autocomplete='one-time-code';
-  code.placeholder='Email verification code';code.setAttribute('aria-label','Email verification code');
+  code.placeholder='Numeric code (only if your email includes one)';code.setAttribute('aria-label','Email verification code');
   code.hidden=true;
-  const submit=document.createElement('button');submit.type='submit';submit.textContent='Send sign-in code';
+  const submit=document.createElement('button');submit.type='submit';submit.textContent='Email me a sign-in link';
   submit.style.cssText='border:0;padding:12px 18px;border-radius:9px;background:#e1f4fc;color:#12374a;font-weight:700;cursor:pointer';
   const status=document.createElement('p');status.setAttribute('role','status');
   status.style.cssText='margin:0;font-size:13px';
   panel.append(email,code,submit,status);
   root.querySelector('.inner')?.append(panel);
-  say('Sign in with the email you already use for Level Up. No new account is created.');
+  say('Sign in with your existing Level Up email. Follow the sign-in link from your email back to this page. No new account is created.');
   let awaitingCode=false;
   return await new Promise(resolve=>{
    panel.addEventListener('submit',async event=>{
     event.preventDefault();submit.disabled=true;status.textContent='Checking sign-in…';
     try{
      if(!awaitingCode){
-      const {error}=await client.auth.signInWithOtp({email:email.value.trim(),options:{shouldCreateUser:false}});
+      const redirect=location.origin+location.pathname;
+      const {error}=await client.auth.signInWithOtp({email:email.value.trim(),options:{shouldCreateUser:false,emailRedirectTo:redirect}});
       if(error)throw error;
-      awaitingCode=true;email.readOnly=true;code.hidden=false;code.required=true;
-      submit.textContent='Verify code';
-      status.textContent='Check your email for the Level Up sign-in code. If the email only contains a link, use the normal Level Up sign-in and contact the tester about code delivery.';
-      code.focus();
+      awaitingCode=true;email.readOnly=true;code.hidden=false;code.required=false;
+      submit.textContent='Verify code (if provided)';
+      status.textContent='Check your email and click the Level Up sign-in link. It should return to this staging page. If the email provides a numeric code instead, enter it here.';
      }else{
+      if(!code.value.trim())throw new Error('Open the sign-in link in your email, or enter the numeric code if one was sent.');
       const {data,error}=await client.auth.verifyOtp({email:email.value.trim(),token:code.value.trim(),type:'email'});
       if(error)throw error;
       if(!data?.session)throw new Error('The sign-in code did not create a verified session.');
