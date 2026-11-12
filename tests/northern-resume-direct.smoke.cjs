@@ -35,7 +35,9 @@ const assert = require('node:assert/strict');
  await page.route('https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-nova-staged-resume-ai',async route=>{
   const val=JSON.parse(route.request().postData()||'{}');requests.push(val);
   let data={};
-  if(val.mode==='bullet'){
+  if(val.mode==='bullet' && String(val.evidence?.currentEvidence||'').includes('football team captain')){
+   data={needsClarification:false,clearDirect:'Served as football team captain, coordinating teammates during team activities.',skillsForward:'Demonstrated team leadership as football captain while supporting team coordination.'};
+  }else if(val.mode==='bullet'){
    data=requests.filter(x=>x.mode==='bullet').length===1?
     {needsClarification:true,question:'Which tasks did you personally complete?',clearDirect:'',skillsForward:''}:
     {needsClarification:false,clearDirect:'Organized stock and supported customer requests during assigned shifts.',skillsForward:'Provided customer support while maintaining organized inventory during assigned shifts.'};
@@ -106,6 +108,17 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#luDiscoveryResults button').count(),3,'All discovered themes survive reload');
   assert.ok((await page.locator('#luDiscoveryOriginal').textContent()).includes('Served as football team captain'),'Unchanged original story survives reload');
   assert.ok((await page.locator('#luDiscoveryResults').textContent()).includes('✓ Added'),'Approved theme is marked complete after reload');
+  await page.locator('#luDiscoveryResults button').nth(1).click();
+  assert.equal(await page.locator('#rbEvidence').inputValue(),'Served as football team captain.','Second accomplishment restores its own source');
+  await page.locator('#rbBuildBullet').click();
+  await page.locator('#rbCommitSelectedBullet').waitFor({timeout:15000});
+  await page.locator('#rbBulletChoices [data-rb-draft]').first().click();
+  await page.locator('#rbCommitSelectedBullet').click();
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('levelup-northern-direct-r2w-v1')).resumeBuilder.novaDiscoveryCollections[0].items[1].status==='complete',null,{timeout:15000});
+  assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),1,'First accomplishment remains after second is approved');
+  assert.equal(await page.locator('#rpExperienceList').getByText('Served as football team captain',{exact:false}).count(),1,'Second accomplishment becomes its own bullet');
+  assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('levelup-northern-direct-r2w-v1')).resumeBuilder.novaDiscoveryCollections[0])).items.filter(x=>x.status==='pending').length,1,'Third accomplishment is still available');
+
 
   await page.locator('#rbNext').click();
   await page.locator('#rbSkills').fill('Customer service, Inventory management');
@@ -118,7 +131,7 @@ const assert = require('node:assert/strict');
   assert.equal(completedVersions.length,1,'A single completed Level Up résumé version was inserted before redirect');
   const version=completedVersions[0].version_data;
   assert.equal(version.contact.name,'Test Participant','Canonical participant name');
-  assert.equal(version.bullets.length,1,'One verified version bullet');
+  assert.equal(version.bullets.length,2,'Separate approved accomplishments appear as distinct résumé bullets');
   assert.equal(version.bullets[0].bullet.startsWith('Provided customer support'),true);
   // A second, blank résumé must never replace the saved original in the workspace.
   await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=ready-2-work#resume-builder',{waitUntil:'domcontentloaded'});
