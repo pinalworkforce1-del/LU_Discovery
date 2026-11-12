@@ -79,6 +79,22 @@ const assert = require('node:assert/strict');
   assert.equal(version.contact.name,'Test Participant','Canonical participant name');
   assert.equal(version.bullets.length,1,'One verified version bullet');
   assert.equal(version.bullets[0].bullet.startsWith('Provided customer support'),true);
+  // A second, blank résumé must never replace the saved original in the workspace.
+  await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html#resume-builder',{waitUntil:'domcontentloaded'});
+  await page.locator('#luResumeWorkspace select option').first().waitFor({timeout:20000});
+  assert.equal(await page.locator('#luResumeWorkspace select option').count(),1,'Original résumé becomes the first workspace item');
+  await page.locator('#luResumeWorkspace button').click();
+  await page.waitForURL(/northern-resume-direct\\/index.html/,{timeout:20000});
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.items?.length===2,null,{timeout:20000});
+  await page.locator('#luResumeWorkspace select option').nth(1).waitFor({timeout:20000});
+  assert.equal(await page.locator('#rbTarget').inputValue(),'','New résumé begins without target');
+  assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),0,'New résumé excludes the old experience bullets');
+  const savedWorkspace=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_master')).levelUpNorthernResumeWorkspace);
+  assert.equal(savedWorkspace.items[0].resume.experiences[0].bullets[0].startsWith('Provided customer support'),true,'Original résumé preserved in the cloud workspace');
+  await page.locator('#luResumeWorkspace select').selectOption(savedWorkspace.items[0].id);
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.activeId===JSON.parse(localStorage.getItem('__mock_master')||'{}').levelUpNorthernResumeWorkspace?.items?.[0]?.id,null,{timeout:20000});
+  await page.locator('#luResumeWorkspace select option').first().waitFor({timeout:20000});
+  assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),1,'Switching back restores original résumé');
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('PASS direct Northern port: identity, stages, Nova clarification, select/highlight, explicit Add, replace, reload, save Level Up version');
  }catch(e){
