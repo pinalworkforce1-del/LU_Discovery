@@ -101,7 +101,7 @@
   if(allowedEntry.includes(entryParam))sessionStorage.setItem(entryKey,entryParam);
   const origin=allowedEntry.includes(entryParam)?entryParam:(sessionStorage.getItem(entryKey)||null);
   const destinations={
-   'resume-district':{label:'Resume District',url:'https://pinalworkforce1-del.github.io/LU_Discovery/'},
+   'resume-district':{label:'Resume District',url:'https://pinalworkforce1-del.github.io/Resume_District/'},
    'ready-2-work':{label:'Ready 2 Work map',url:'https://pinalworkforce1-del.github.io/Level_Up_Portal/career-tree-next/ready-2-work/#map'}
   };
   function chooseReturn(){
