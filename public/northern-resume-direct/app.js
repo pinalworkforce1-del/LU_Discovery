@@ -288,6 +288,9 @@
     return data;
   }
   function showResumeCoach(id,html){const el=$(id);if(!el)return;el.hidden=false;el.innerHTML=html}
+  let novaFollowUpCount=0;
+  const novaPreviousQuestions=[];
+  window.addEventListener('levelup-nova-coaching-reset',()=>{novaFollowUpCount=0;novaPreviousQuestions.length=0});
   async function rosieBuildBullet(){
     const d=resumeData(),btn=$('rbBuildBullet'),choices=$('rbBulletChoices');
     // A new Nova drafting session starts a new bullet. Only switching between
@@ -295,8 +298,18 @@
     const current=d.experiences[d.activeExperience||0];
     if(current)current.novaPairLastApproved=null;if(!String(d.evidence||'').trim()){showResumeCoach('rbBulletCoach','<b>Tell me one thing you did in this role.</b><br>Use normal words. I’ll ask questions and help turn it into strong résumé evidence.');$('rbEvidence').focus();return}
     btn.disabled=true;btn.textContent='Nova is working…';choices.innerHTML='';showResumeCoach('rbBulletCoach','<b>Working from your real experience…</b><br>I won’t add facts you didn’t give me.');
-    const askInline=(question,label)=>{const box=$('rbBulletCoach');box.hidden=false;box.innerHTML='<div class="rosie-live-convo"><div class="rosie-convo-label">'+label+'</div><div class="rosie-speaking"><b>Nova</b><div class="rosie-typed-question"></div></div><div class="rosie-reply-wrap"><label>Your answer</label><textarea rows="3" placeholder="Answer Nova in your own words…"></textarea><button type="button" class="rosie-send-btn">Send to Nova →</button></div></div>';const q=box.querySelector('.rosie-typed-question'),reply=box.querySelector('textarea'),send=box.querySelector('button');q.textContent='';let i=0;const timer=setInterval(()=>{q.textContent=question.slice(0,++i);if(i>=question.length){clearInterval(timer);reply.focus()}},18);send.onclick=async()=>{const answer=reply.value.trim();if(!answer){reply.focus();return}d.evidence=[d.evidence,answer].filter(Boolean).join(d.evidence?'\\n':'');$('rbEvidence').value=d.evidence;saveState();showResumeCoach('rbBulletCoach','<b>Got it.</b> Let me use that with what you already told me…');await rosieBuildBullet()}};
-    try{const data=await callR2WResumeAI({mode:'bullet',evidence:{targetOccupation:d.target,experience:d.experience,currentEvidence:d.evidence,previousBullets:((d.experiences[d.activeExperience||0]||{}).bullets||[])}});
+    const askInline=(question,label)=>{
+      // A single clarification is sufficient to attempt a conservative draft.
+      if(novaFollowUpCount>=1){
+        showResumeCoach('rbBulletCoach','<b>Let’s draft from what you have already shared.</b><br>Nova will leave out any detail that cannot be confirmed.');
+        choices.innerHTML='<button type="button" class="primary-btn" id="rbRetryConservative">Draft from my verified facts →</button>';
+        choices.querySelector('#rbRetryConservative').onclick=()=>void rosieBuildBullet();
+        return;
+      }
+      novaFollowUpCount++;
+      novaPreviousQuestions.push(question);
+const box=$('rbBulletCoach');box.hidden=false;box.innerHTML='<div class="rosie-live-convo"><div class="rosie-convo-label">'+label+'</div><div class="rosie-speaking"><b>Nova</b><div class="rosie-typed-question"></div></div><div class="rosie-reply-wrap"><label>Your answer</label><textarea rows="3" placeholder="Answer Nova in your own words…"></textarea><button type="button" class="rosie-send-btn">Send to Nova →</button></div></div>';const q=box.querySelector('.rosie-typed-question'),reply=box.querySelector('textarea'),send=box.querySelector('button');q.textContent='';let i=0;const timer=setInterval(()=>{q.textContent=question.slice(0,++i);if(i>=question.length){clearInterval(timer);reply.focus()}},18);send.onclick=async()=>{const answer=reply.value.trim();if(!answer){reply.focus();return}d.evidence=[d.evidence,answer].filter(Boolean).join(d.evidence?'\n':'');$('rbEvidence').value=d.evidence;saveState();showResumeCoach('rbBulletCoach','<b>Got it.</b> Let me use that with what you already told me…');await rosieBuildBullet()}};
+    try{const data=await callR2WResumeAI({mode:'bullet',evidence:{targetOccupation:d.target,experience:d.experience,currentEvidence:d.evidence,previousBullets:((d.experiences[d.activeExperience||0]||{}).bullets||[]),followUpCount:novaFollowUpCount,previousQuestions:novaPreviousQuestions}});
       if(data.needsClarification){askInline(data.question||'Tell me one more detail about what you did.','One more detail');return}
       if(data.integrityFailed){askInline(data.question||'Can you give me one more factual detail so I can verify that wording?','Quick fact check');return}
       const drafts=[{label:'Clear & Direct',text:data.clearDirect},{label:'Skills Forward',text:data.skillsForward}].filter(x=>x.text);
