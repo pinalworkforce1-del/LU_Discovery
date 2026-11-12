@@ -33,9 +33,10 @@ const assert = require('node:assert/strict');
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)});
  });
  try{
-  await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html#resume-builder',{waitUntil:'domcontentloaded'});
+  await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=ready-2-work#resume-builder',{waitUntil:'domcontentloaded'});
   await page.locator('#northernGate').waitFor({state:'hidden',timeout:20000});
   assert.equal(await page.locator('#viewResumeBuilder').isVisible(),true,'Original résumé builder opened');
+  assert.equal(await page.locator('#luResumeWorkspace').count(),0,'Workspace mounts asynchronously after cloud ready');
   await page.locator('#rbContactName').fill('Test Participant');
   await page.locator('#rbEmail').fill('test@example.invalid');
   await page.locator('#rbTarget').fill('Cashier');
@@ -80,7 +81,7 @@ const assert = require('node:assert/strict');
   assert.equal(version.bullets.length,1,'One verified version bullet');
   assert.equal(version.bullets[0].bullet.startsWith('Provided customer support'),true);
   // A second, blank résumé must never replace the saved original in the workspace.
-  await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html#resume-builder',{waitUntil:'domcontentloaded'});
+  await page.goto('http://127.0.0.1:8765/LU_Discovery/northern-resume-direct/index.html?from=ready-2-work#resume-builder',{waitUntil:'domcontentloaded'});
   await page.locator('#luResumeWorkspace select option').first().waitFor({state:'attached',timeout:20000});
   assert.equal(await page.locator('#luResumeWorkspace select option').count(),1,'Original résumé becomes the first workspace item');
   await page.locator('#luResumeWorkspace button').click();
