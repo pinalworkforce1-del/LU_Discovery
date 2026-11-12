@@ -98,6 +98,12 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#rpExperienceList').getByText('Organized stock and supported customer requests',{exact:false}).count(),0,'Selecting does not save');
   await page.locator('#rbCommitSelectedBullet').click();
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('levelup-northern-direct-r2w-v1')).resumeBuilder.novaDiscoveryCollections[0].items[2].status==='complete',null,{timeout:20000});
+  await page.locator('#luDiscoveryNextActions').waitFor({state:'visible',timeout:15000});
+  assert.equal(await page.locator('#luDiscoveryNext').isVisible(),true,'Next accomplishment is offered adjacent to saved bullet');
+  assert.equal(await page.locator('#luDiscoveryAnother').isVisible(),true,'Another bullet option clearly available');
+  assert.equal(await page.locator('#luDiscoveryFinish').isVisible(),true,'Finish experience option clearly available');
+  assert.equal(await page.locator('#rbExperienceActions').isHidden(),true,'Legacy competing actions hidden during discovered experience');
+
   assert.equal(await page.locator('#luDiscoveryResults button').count(),3,'Other themes remain available after saving first bullet');
   assert.ok((await page.locator('#luDiscoveryOriginal').textContent()).includes('Served as football team captain'),'Original story remains accessible after adding bullet');
   assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('levelup-northern-direct-r2w-v1')).resumeBuilder.novaDiscoveryCollections[0])).items.filter(x=>x.status==='pending').length,2,'Other two themes remain pending');
@@ -113,10 +119,13 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#luDiscoveryResults button').count(),3,'All discovered themes survive reload');
   assert.ok((await page.locator('#luDiscoveryOriginal').textContent()).includes('Served as football team captain'),'Unchanged original story survives reload');
   assert.ok((await page.locator('#luDiscoveryResults').textContent()).includes('✓ Added'),'Approved theme is marked complete after reload');
-  await page.locator('#luDevelopNextAccomplishment').waitFor({state:'visible',timeout:15000});
-  await page.locator('#luDiscoveryResults button').nth(1).click();
+  await page.locator('#luDiscoveryNextActions').waitFor({state:'visible',timeout:15000});
+  await page.locator('#luDiscoveryNext').click();
   assert.equal(await page.locator('#rbBuildBullet').isHidden(),true,'One-click Nova coaching does not show duplicate action');
 
+  assert.equal(await page.locator('#rbEvidence').inputValue(),'Maintained a 4.0 GPA and joined the Honor Society.','Guided next action picks the first pending discovery');
+  // Select another pending accomplishment to verify multi-bullet preserving behavior.
+  await page.locator('#luDiscoveryResults button').nth(1).click();
   assert.equal(await page.locator('#rbEvidence').inputValue(),'Served as football team captain.','Second accomplishment restores its own source');
   await page.locator('#rbCommitSelectedBullet').waitFor({timeout:15000});
   await page.locator('#rbBulletChoices [data-rb-draft]').first().click();
@@ -125,9 +134,12 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#rpExperienceList').getByText('Provided customer support while maintaining organized inventory',{exact:false}).count(),1,'First accomplishment remains after second is approved');
   assert.equal(await page.locator('#rpExperienceList').getByText('Served as football team captain',{exact:false}).count(),1,'Second accomplishment becomes its own bullet');
   assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('levelup-northern-direct-r2w-v1')).resumeBuilder.novaDiscoveryCollections[0])).items.filter(x=>x.status==='pending').length,1,'Third accomplishment is still available');
+  assert.equal(await page.locator('#luDiscoveryNextActions').isVisible(),true,'Guided next action returned after the second approved bullet');
+  await page.locator('#luDiscoveryFinish').click();
+  assert.equal(await page.locator('[data-resume-step="2"]').isVisible(),true,'Finish choice moves to Skills and Education');
 
 
-  await page.locator('#rbNext').click();
+
   await page.locator('#rbSkills').fill('Customer service, Inventory management');
   await page.locator('#rbNext').click();
   await page.locator('#rbSummary').fill('Customer-focused volunteer with inventory and event support experience.');
