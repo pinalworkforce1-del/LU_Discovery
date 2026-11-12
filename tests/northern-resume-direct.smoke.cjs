@@ -232,6 +232,12 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('#rbTarget').inputValue(),'Event Coordinator','Selected historical version persists after reload');
   const workspaceAfterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_master')).levelUpNorthernResumeWorkspace);
   assert.equal(workspaceAfterReload.items.filter(x=>x.sourceVersionId===historicalId).length,1,'Reload does not create duplicate workspace copies');
+  // Return to the previously completed working résumé before checking its
+  // independent Resume District completion path. The imported historical copy
+  // correctly begins as an unverified draft, not an automatically completed one.
+  await page.locator('#luResumeWorkspace select').selectOption(savedWorkspace.items[0].id);
+  await page.waitForFunction(()=>document.querySelector('#rbTarget')?.value==='Cashier',null,{timeout:15000});
+
 
   // A fresh launch from Resume District preserves that entry context on exit.
   await page.route('https://pinalworkforce1-del.github.io/Resume_District/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Resume District return intercepted</title>'}));
