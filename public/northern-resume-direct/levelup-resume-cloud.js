@@ -122,6 +122,20 @@
    }))
   });
  }
+ async function recordResumeRiseCompletion(versionId){
+  if(ctx.origin!=='ready-2-work')return;
+  const now=stamp();
+  const row={
+   user_id:uid,
+   module_id:'ready2work-resume-rise',
+   journey_state:{source:'nova-staged-resume',entry_point:'ready-2-work',resume_version_id:versionId,saved_at:now},
+   is_complete:true,
+   updated_at:now,
+   completed_at:now
+  };
+  const {error}=await client.from('module_progress').upsert(row,{onConflict:'user_id,module_id'});
+  if(error)throw new Error('Your résumé is saved, but Resume Rise progression could not be confirmed. Please retry completion.');
+ }
  async function complete(){
   const d=snapshot();
   if(!d?.complete)throw new Error('Finish verifying your résumé before completing.');
@@ -131,7 +145,10 @@
   const c=canonical(d,master);
   if(!t||!c.contact?.name||!c.bullets.some(b=>b.bullet.length>=16))throw new Error('Add a target, contact name, and reviewed bullet before completion.');
   const fingerprint=completedVersionFingerprint(d);
-  if(d.levelUpVersionSavedId&&d.levelUpVersionFingerprint===fingerprint)return d.levelUpVersionSavedId;
+  if(d.levelUpVersionSavedId&&d.levelUpVersionFingerprint===fingerprint){
+   await recordResumeRiseCompletion(d.levelUpVersionSavedId);
+   return d.levelUpVersionSavedId;
+  }
   const {data,error}=await client.from('resume_versions').insert({
    user_id:uid,version_name:toString(d.versions?.[d.activeVersion||0]?.name||'Nova staged résumé'),
    target_role:t,occupation_code:toString(d.versions?.[d.activeVersion||0]?.onetOccupationCode||'')||null,
@@ -140,6 +157,13 @@
   if(error||!data?.id)throw error||new Error('Version save was not confirmed.');
   d.levelUpVersionSavedId=data.id;
   d.levelUpVersionFingerprint=fingerprint;
+  // Once a version has been inserted, persist the ID before any progression
+  // write; retries must not duplicate immutable résumé versions.
+  const savedState=read()||{};
+  savedState.resumeBuilder=d;
+  localStorage.setItem(KEY,JSON.stringify(savedState));
+  schedule();
+  await recordResumeRiseCompletion(data.id);
   const state=read()||{};state.resumeBuilder=d;localStorage.setItem(KEY,JSON.stringify(state));
   schedule();await ensureSaved();
   say('Completed résumé version saved to Level Up');
