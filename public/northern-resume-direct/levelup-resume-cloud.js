@@ -132,7 +132,7 @@
   const host=document.getElementById('viewResumeBuilder');
   if(!host||document.getElementById('luResumeWorkspace'))return;
   const panel=document.createElement('section');panel.id='luResumeWorkspace';
-  panel.style.cssText='max-width:1100px;margin:18px auto;padding:16px 20px;border:1px solid #b9ccdb;border-radius:14px;background:#eef7fd;color:#18384f;font-family:system-ui';
+  panel.style.cssText='width:100%;margin:12px 0 18px;padding:12px 16px;border:1px solid #b9ccdb;border-radius:14px;background:#eef7fd;color:#18384f;font-family:system-ui';
   const title=document.createElement('strong');title.textContent='My résumé workspace';
   title.style.cssText='font-size:18px;display:block;margin-bottom:8px';
   const desc=document.createElement('p');desc.textContent='Continue your existing résumé, switch to a saved résumé, or start a completely new one. Your saved résumés stay separate.';
@@ -142,7 +142,8 @@
   const create=document.createElement('button');create.type='button';create.textContent='＋ Start a new résumé';
   create.style.cssText='padding:10px 14px;border-radius:8px;border:0;background:#145c82;color:white;font-weight:700;cursor:pointer';
   const status=document.createElement('p');status.setAttribute('role','status');status.style.cssText='font-size:13px;margin:8px 0 0';
-  panel.append(title,desc,select,create,status);host.prepend(panel);
+  panel.append(title,desc,select,create,status);
+  host.querySelector('.resume-builder-head')?.insertAdjacentElement('afterend',panel);
   async function list(){
    const master=await getMaster();const w=normalizedWorkspace(master,snapshot());
    select.replaceChildren();
