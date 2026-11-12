@@ -174,7 +174,7 @@
   function hideViews(){ document.querySelectorAll('.view').forEach(v=>v.hidden=true); }
   function route(name, opts={}){
     // Level Up has its own pathway map; Northern course stages stay inactive here.
-    if(name==='map'){window.location.href='https://pinalworkforce1-del.github.io/Level_Up_Portal/career-tree-next/ready-2-work/#map';return;}
+    if(name==='map'){window.LEVELUP_NOVA_R2W?.navigateBack?.();return;}
     stopAudio();
     hideViews();
     if(name==='map'){
@@ -496,7 +496,7 @@
     }
     if(state.currentScene<scenes.length-1) route('scene',{index:state.currentScene+1});
   };
-  $('resumeBackBtn').onclick=()=>{window.location.href='https://pinalworkforce1-del.github.io/LU_Discovery/';};
+  $('resumeBackBtn').onclick=()=>window.LEVELUP_NOVA_R2W?.navigateBack?.();
   if($('rbVersionSlots')){const d=resumeData();const box=$('rbVersionSlots');box.innerHTML=[0,1,2].map(i=>i<d.versions.length?'<button type="button" data-version="'+i+'" class="'+(i===d.activeVersion?'selected':'')+'">'+escapeHtml(d.versions[i].name)+' • '+escapeHtml(d.versions[i].target||'Set target')+(i===d.activeVersion?' • Current':'')+'</button>':'<button type="button" data-version-add="'+i+'">＋ Résumé '+(i+1)+'</button>').join('');box.querySelectorAll('[data-version]').forEach(b=>b.onclick=()=>{const x=resumeData();x.versions[x.activeVersion].target=x.target;x.versions[x.activeVersion].jobDescription=x.jobDescription;x.versions[x.activeVersion].summary=x.summary;x.versions[x.activeVersion].format=x.resumeFormat;x.versions[x.activeVersion].alignment=x.alignment||null;x.activeVersion=Number(b.dataset.version);const v=x.versions[x.activeVersion];x.alignment=v.alignment||null;x.target=v.target||'';x.jobDescription=v.jobDescription||'';x.summary=v.summary||'';x.resumeFormat=v.format||'hybrid';saveState();renderResumeBuilder()});box.querySelectorAll('[data-version-add]').forEach(b=>b.onclick=()=>{const x=resumeData();if(x.versions.length>=3)return;x.versions.push({name:'Résumé '+(x.versions.length+1),target:'',jobDescription:'',summary:'',format:'hybrid',visualStyle:'modern'});x.activeVersion=x.versions.length-1;x.alignment=null;x.target='';x.jobDescription='';x.summary='';x.resumeFormat='hybrid';saveState();renderResumeBuilder();$('rbTarget')?.focus()})}
   if($('rbBuildBullet')) $('rbBuildBullet').onclick=rosieBuildBullet;
   if($('rbAddExperience')) $('rbAddExperience').onclick=addResumeExperience;
@@ -572,7 +572,7 @@
       d.complete=true;d.completedAt=new Date().toISOString();saveState();
       await window.LEVELUP_NOVA_R2W.complete();
       renderResumeBuilder();updateOverall();
-      alert('Your completed résumé version is saved to Level Up.');route('map');
+      window.LEVELUP_NOVA_R2W?.navigateBack?.();
     }catch(error){
       d.complete=false;saveState();renderResumeBuilder();
       alert(error.message||'Level Up could not confirm completion. Your draft remains saved.');
