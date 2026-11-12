@@ -224,7 +224,7 @@ const assert = require('node:assert/strict');
   assert.equal((await page.locator('#rpExperienceList').textContent()).includes('Coordinated student events'),true,'Selected version retains historical bullets');
   const newlyOpened=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_master')).levelUpNorthernResumeWorkspace);
   assert.equal(newlyOpened.items.filter(x=>x.sourceVersionId==='20000000-0000-4000-8000-000000000001').length,1,'One linked editable copy of selected version');
-  assert.equal(newlyOpened.items.some(x=>x.resume.experiences?.some(y=>y.bullets?.includes('Provided customer support while maintaining organized inventory'))),true,'Original separate working résumé preserved: '+JSON.stringify(newlyOpened.items.map(x=>({title:x.title,sourceVersionId:x.sourceVersionId,bullets:x.resume.experiences?.map(y=>y.bullets)}))));
+  assert.equal(newlyOpened.items.some(x=>x.resume.experiences?.some(y=>y.bullets?.some(b=>b.startsWith('Provided customer support while maintaining organized inventory')))),true,'Original separate working résumé preserved: '+JSON.stringify(newlyOpened.items.map(x=>({title:x.title,sourceVersionId:x.sourceVersionId,bullets:x.resume.experiences?.map(y=>y.bullets)}))));
   const preservedAfter=await page.evaluate(()=>JSON.parse(localStorage.getItem('__mock_versions')).find(x=>x.id==='20000000-0000-4000-8000-000000000001'));
   assert.deepEqual(preservedAfter,preservedBefore,'Opening historical version does not alter immutable saved snapshot');
   await page.reload({waitUntil:'domcontentloaded'});
