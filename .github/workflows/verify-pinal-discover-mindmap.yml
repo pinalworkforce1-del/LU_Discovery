@@ -1,0 +1,41 @@
+name: Verify Pinal Mind Map in Discover Me Coach View
+on:
+  pull_request:
+    paths:
+      - 'scripts/patch-career-tree-coach-dashboard.py'
+      - 'public/coach-career-tree.html'
+      - '.github/workflows/verify-pinal-discover-mindmap.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply canonical Career Tree coach patch
+        run: python scripts/patch-career-tree-coach-dashboard.py
+      - name: Verify integrated Discover Me Mind Map
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('public/coach-career-tree.html').read_text()
+          assert 'function pinalMindMapHtml(d)' in s
+          assert "module==='discover_me'?discoverHtml(ct.discover_me)+pinalMindMapHtml(" in s
+          assert "careerModule(p,'my-path-forward')" in s
+          assert "const mods=[['Discover Me'" in s
+          assert "done+' / 3 complete" in s
+          assert 'Action specificity opportunity' in s
+          assert 'readiness dimensions' in s.lower()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
+          Path('/tmp/coach-view-inline.js').write_text('\n'.join(scripts))
+          print('Mind Map embedded inside Discover Me. Three required modules preserved.')
+          PY
+          node --check /tmp/coach-view-inline.js
