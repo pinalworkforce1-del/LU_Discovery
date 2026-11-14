@@ -147,9 +147,11 @@ mindmap_js = r'''function pinalMindMapHtml(d){
  const dimensionsHtml=dimensions.map(x=>'<div class="row"><b>'+esc(x.label)+'</b><span>'+esc(x.value===null?'Not answered':x.value+' / 2')+'</span></div>').join('');
  const historyHtml=Array.isArray(d.history)&&d.history.length>1?'<details class="mindHistory"><summary>Readiness history ('+d.history.length+' snapshots)</summary>'+d.history.slice(-10).reverse().map(h=>'<div class="row"><b>'+esc(fmt(h.at))+'</b><span>Self '+esc(h.self_reported_readiness===null?'—':h.self_reported_readiness)+'/10 · Plan '+esc(h.plan_readiness===null?'—':h.plan_readiness)+'/10</span></div>').join('')+'</details>':'';
  const notes=String(fields.nextStep||'').trim();
- const vague=notes&&((notes.split(/\s+/).length<4)||/^(complete (this|it)|do (this|it)|get started|start|finish|done|help|work on this)[.! ]*$/i.test(notes));
+ const vague=Boolean(d.action_specificity?.needs_clarification);
  const coachQuestions=Array.isArray(d.coach_talking_points)?d.coach_talking_points:[];
- const refine=vague?'<div class="coachPrompt"><b>Action specificity opportunity</b><br>The first step is not yet specific. Ask: “What is one concrete action you could take, who might you contact, and when?” This does not alter the participant’s Plan Readiness score.</div>':'';
+ const coachPriorities=Array.isArray(d.suggested_coaching_priorities)?d.suggested_coaching_priorities.slice(0,3):[];
+ const refine=vague?'<div class="coachPrompt"><b>Action specificity opportunity</b><br>The first step could be made more specific. Ask: '+esc(d.action_specificity?.suggested_prompt||'What concrete action might you take, who could you contact, and when?')+' This does not alter the participant’s Plan Readiness score.</div>':'';
+ const prioritiesHtml=coachPriorities.length?'<h4>Suggested coaching priorities</h4><ol class="mindPriorities">'+coachPriorities.map(item=>'<li><b>'+esc(item.title||'Coaching priority')+'</b><p>'+esc(item.detail||'')+'</p></li>').join('')+'</ol><p class="notice">Suggested coaching opportunities only. Discuss with the participant before agreeing on any services or next steps.</p>':'';
  const privateFlag=d.private_conversation_requested?'<div class="coachPrompt"><b>Private conversation requested</b><br>The participant has asked to talk privately with a Career Coach. No reason or sensitive information was collected.</div>':'';
  const supportHtml=(d.requested_support||[]).map(k=>supports[k]).filter(Boolean).map(v=>'<span class="chip">'+esc(v)+'</span>').join('');
  return '<section class="section mindMap"><h3>My Path Forward · Pinal Mind Map '+badge+'</h3>'+
@@ -159,6 +161,7 @@ mindmap_js = r'''function pinalMindMapHtml(d){
  refine+privateFlag+
  '<h4>Readiness dimensions</h4>'+dimensionsHtml+
  '<h4>Coach conversation starters</h4><ul class="mindPrompts">'+(coachQuestions.length?coachQuestions.map(q=>'<li>'+esc(q)+'</li>').join(''):'<li>What would be a useful first step for you?</li>')+'</ul>'+
+ prioritiesHtml+
  '<h4>What would help the participant move forward?</h4><div class="chips">'+(supportHtml||'<span class="notice">No support choices saved.</span>')+'</div>'+
  '<h4>Participant mind map</h4><div class="mindFields">'+fieldsHtml+'</div>'+
  '<h4>Options to explore</h4><div class="chips">'+(optionsHtml||'<span class="notice">No options selected.</span>')+'</div>'+
@@ -187,6 +190,7 @@ mind_css = """
 .mindField p{font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0 0}
 .mindScores .mini strong{font-size:16px;overflow-wrap:anywhere}
 .mindPrompts li{margin:7px 0;font-size:12px;line-height:1.5}
+.mindPriorities{padding-left:26px;margin:10px 0}.mindPriorities li{font-size:12px;line-height:1.5;padding:7px 4px}.mindPriorities li b{color:#235168}.mindPriorities li p{margin:4px 0;color:#425f70;white-space:pre-wrap;overflow-wrap:anywhere}
 .mindHistory{margin-top:14px;border:1px solid #cfdee4;padding:12px;border-radius:10px}
 .mindHistory summary{cursor:pointer;font-weight:800}
 @media(max-width:680px){.mindFields{grid-template-columns:1fr}}
