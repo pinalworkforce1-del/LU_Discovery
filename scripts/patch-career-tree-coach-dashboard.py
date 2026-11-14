@@ -125,8 +125,8 @@ print('Patched Career Tree Coach View with shared roster filters, coach assignme
 # Attach Pinal's optional My Path Forward mind map inside Discover Me, not as a fourth core card.
 # Run after the baseline coach dashboard patch so the build cannot overwrite this integration.
 s = career.read_text(encoding='utf-8')
-old_card = "'<span>'+statusText(m?.status)+'</span><em>'"
-new_card = "'<span>'+statusText(m?.status)+(key==='discover_me'&&String(p.county||'').toLowerCase()==='pinal'?(careerModule(p,'my-path-forward').is_complete?' · Mind Map complete':careerModule(p,'my-path-forward').status==='in_progress'?' · Mind Map in progress':' · Mind Map not started'):'')+'</span><em>'"
+old_card = "<span>'+statusText(m?.status)+'</span><em>"
+new_card = "<span>'+statusText(m?.status)+(key==='discover_me'&&String(p.county||'').toLowerCase()==='pinal'?(careerModule(p,'my-path-forward').is_complete?' · Mind Map complete':careerModule(p,'my-path-forward').status==='in_progress'?' · Mind Map in progress':' · Mind Map not started'):'')+'</span><em>"
 if old_card not in s:
     raise SystemExit('Discover Me card status anchor missing')
 s = s.replace(old_card, new_card, 1)
