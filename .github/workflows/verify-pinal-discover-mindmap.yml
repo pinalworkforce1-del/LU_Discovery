@@ -33,6 +33,11 @@ jobs:
           assert "const mods=[['Discover Me'" in s
           assert "done+' / 3 complete" in s
           assert 'Action specificity opportunity' in s
+          assert 'Suggested coaching priorities' in s
+          assert 'suggested_coaching_priorities' in s
+          assert 'action_specificity?.suggested_prompt' in s
+          assert "module==='discover_me'?discoverHtml(ct.discover_me)+pinalMindMapHtml(" in s
+          assert "done+' / 3 complete" in s
           assert 'readiness dimensions' in s.lower()
           scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
           Path('/tmp/coach-view-inline.js').write_text('\n'.join(scripts))
