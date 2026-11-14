@@ -126,7 +126,7 @@ print('Patched Career Tree Coach View with shared roster filters, coach assignme
 # Run after the baseline coach dashboard patch so the build cannot overwrite this integration.
 s = career.read_text(encoding='utf-8')
 old_card = "<span>'+statusText(m?.status)+'</span><em>"
-new_card = "<span>'+statusText(m?.status)+(key==='discover_me'&&String(p.county||'').toLowerCase()==='pinal'?(careerModule(p,'my-path-forward').is_complete?' · Mind Map complete':careerModule(p,'my-path-forward').status==='in_progress'?' · Mind Map in progress':' · Mind Map not started'):'')+'</span><em>"
+new_card = "<span>'+statusText(m?.status)+(key==='discover_me'&&true?(careerModule(p,'my-path-forward').is_complete?' · Mind Map complete':careerModule(p,'my-path-forward').status==='in_progress'?' · Mind Map in progress':' · Mind Map not started'):'')+'</span><em>"
 if old_card not in s:
     raise SystemExit('Discover Me card status anchor missing')
 s = s.replace(old_card, new_card, 1)
@@ -134,7 +134,7 @@ if 'function pinalMindMapHtml(' in s:
     raise SystemExit('Duplicate mind-map attachment')
 
 mindmap_js = r'''function pinalMindMapHtml(d){
- if(!d)return '<section class="section"><h3>My Path Forward · Pinal Mind Map</h3><div class="notice">Optional reflection not yet saved. Discover Me O*NET completion remains intact.</div></section>';
+ if(!d)return '<section class="section"><h3>My Path Forward · Mind Map</h3><div class="notice">Optional reflection not yet saved. Discover Me O*NET completion remains intact.</div></section>';
  const self=d.self_reported_readiness,score=d.plan_readiness,fields=d.fields||{};
  const dimensions=Array.isArray(d.scored_dimensions)?d.scored_dimensions:[];
  const supports={career_info:'Learn more about career options',action_plan:'Make a clearer action plan',training:'Explore training or work experience',coach:'Talk with Career Coach',ready:'Ready to take action'};
@@ -175,11 +175,11 @@ s = s.replace(anchor, mindmap_js + anchor, 1)
 find_discover = "module==='discover_me'?discoverHtml(ct.discover_me)"
 if find_discover not in s:
     raise SystemExit('Discover Me detail routing anchor missing')
-s = s.replace(find_discover, "module==='discover_me'?discoverHtml(ct.discover_me)+pinalMindMapHtml(p?.county==='Pinal'?ct.my_path_forward:null)", 1)
+s = s.replace(find_discover, "module==='discover_me'?discoverHtml(ct.discover_me)+pinalMindMapHtml(ct.my_path_forward)", 1)
 find_all = "discoverHtml(ct.discover_me)+exploreHtml(ct.explore_careers)"
 if find_all not in s:
     raise SystemExit('All-modules detail routing anchor missing')
-s = s.replace(find_all, "discoverHtml(ct.discover_me)+(p?.county==='Pinal'?pinalMindMapHtml(ct.my_path_forward):'')+exploreHtml(ct.explore_careers)", 1)
+s = s.replace(find_all, "discoverHtml(ct.discover_me)+pinalMindMapHtml(ct.my_path_forward)+exploreHtml(ct.explore_careers)", 1)
 mind_css = """
 <style>
 .mindMap{border-top:3px solid #4e9c8a;padding-top:16px}

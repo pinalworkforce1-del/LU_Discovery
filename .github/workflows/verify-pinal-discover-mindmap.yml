@@ -1,4 +1,4 @@
-name: Verify Pinal Mind Map in Discover Me Coach View
+name: Verify My Path Forward in Discover Me Coach View
 on:
   pull_request:
     paths:
@@ -28,7 +28,11 @@ jobs:
           import re
           s=Path('public/coach-career-tree.html').read_text()
           assert 'function pinalMindMapHtml(d)' in s
-          assert "module==='discover_me'?discoverHtml(ct.discover_me)+pinalMindMapHtml(" in s
+          assert "module==='discover_me'?discoverHtml(ct.discover_me)+pinalMindMapHtml(ct.my_path_forward)" in s
+          assert "discoverHtml(ct.discover_me)+pinalMindMapHtml(ct.my_path_forward)+exploreHtml(ct.explore_careers)" in s
+          assert "String(p.county||'').toLowerCase()==='pinal'" not in s
+          assert "p?.county==='Pinal'?ct.my_path_forward" not in s
+          assert 'My Path Forward · Mind Map' in s
           assert "careerModule(p,'my-path-forward')" in s
           assert "const mods=[['Discover Me'" in s
           assert "done+' / 3 complete" in s
@@ -41,6 +45,6 @@ jobs:
           assert 'readiness dimensions' in s.lower()
           scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s)
           Path('/tmp/coach-view-inline.js').write_text('\n'.join(scripts))
-          print('Mind Map embedded inside Discover Me. Three required modules preserved.')
+          print('Mind Map available in all-region Discover Me. Three required modules preserved.')
           PY
           node --check /tmp/coach-view-inline.js
