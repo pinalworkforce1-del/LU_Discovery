@@ -120,3 +120,80 @@ if 'href="coach-career-tree.html"' not in c:
 core.write_text(c, encoding='utf-8')
 
 print('Patched Career Tree Coach View with shared roster filters, coach assignment, and two-way navigation. TalentSync handoff pending.')
+
+
+# Attach Pinal's optional My Path Forward mind map inside Discover Me, not as a fourth core card.
+# Run after the baseline coach dashboard patch so the build cannot overwrite this integration.
+s = career.read_text(encoding='utf-8')
+old_card = "<span>'+statusText(m?.status)+'</span><em>"
+new_card = "<span>'+statusText(m?.status)+(key==='discover_me'&&String(p.county||'').toLowerCase()==='pinal'?(careerModule(p,'my-path-forward').is_complete?' · Mind Map complete':careerModule(p,'my-path-forward').status==='in_progress'?' · Mind Map in progress':' · Mind Map not started'):'')+'</span><em>"
+if old_card not in s:
+    raise SystemExit('Discover Me card status anchor missing')
+s = s.replace(old_card, new_card, 1)
+if 'function pinalMindMapHtml(' in s:
+    raise SystemExit('Duplicate mind-map attachment')
+
+mindmap_js = r'''function pinalMindMapHtml(d){
+ if(!d)return '<section class="section"><h3>My Path Forward · Pinal Mind Map</h3><div class="notice">Optional reflection not yet saved. Discover Me O*NET completion remains intact.</div></section>';
+ const self=d.self_reported_readiness,score=d.plan_readiness,fields=d.fields||{};
+ const dimensions=Array.isArray(d.scored_dimensions)?d.scored_dimensions:[];
+ const supports={career_info:'Learn more about career options',action_plan:'Make a clearer action plan',training:'Explore training or work experience',coach:'Talk with Career Coach',ready:'Ready to take action'};
+ const options={diploma:'GED or diploma',wex:'Job or work experience',training:'Training or credential',apprenticeship:'Apprenticeship',college:'College',business:'Starting a business'};
+ const fieldLabels=[['nextChapter','My next chapter'],['myStory','My story'],['whereNow','Where I am now'],['strengths','What I bring'],['motivations','What motivates me'],['resources','People and resources'],['futureVision','My future vision'],['goal','One goal I choose now'],['nextStep','My first next step'],['support','Who will support me'],['target','Target date']];
+ const mini=(label,value)=>'<div class="mini"><small>'+esc(label)+'</small><strong>'+esc(value===null||value===undefined?'—':value)+'</strong></div>';
+ const badge='<span class="status '+(d.is_complete?'done':'started')+'">'+(d.is_complete?'Complete':'Draft')+'</span>';
+ const fieldsHtml=fieldLabels.map(([key,label])=>'<div class="mindField"><b>'+esc(label)+'</b><p>'+esc(fields[key]||'Not recorded')+'</p></div>').join('');
+ const optionsHtml=Array.isArray(d.options)?d.options.map(key=>options[key]).filter(Boolean).map(v=>'<span class="chip">'+esc(v)+'</span>').join(''):'';
+ const dimensionsHtml=dimensions.map(x=>'<div class="row"><b>'+esc(x.label)+'</b><span>'+esc(x.value===null?'Not answered':x.value+' / 2')+'</span></div>').join('');
+ const historyHtml=Array.isArray(d.history)&&d.history.length>1?'<details class="mindHistory"><summary>Readiness history ('+d.history.length+' snapshots)</summary>'+d.history.slice(-10).reverse().map(h=>'<div class="row"><b>'+esc(fmt(h.at))+'</b><span>Self '+esc(h.self_reported_readiness===null?'—':h.self_reported_readiness)+'/10 · Plan '+esc(h.plan_readiness===null?'—':h.plan_readiness)+'/10</span></div>').join('')+'</details>':'';
+ const notes=String(fields.nextStep||'').trim();
+ const vague=notes&&((notes.split(/\s+/).length<4)||/^(complete (this|it)|do (this|it)|get started|start|finish|done|help|work on this)[.! ]*$/i.test(notes));
+ const coachQuestions=Array.isArray(d.coach_talking_points)?d.coach_talking_points:[];
+ const refine=vague?'<div class="coachPrompt"><b>Action specificity opportunity</b><br>The first step is not yet specific. Ask: “What is one concrete action you could take, who might you contact, and when?” This does not alter the participant’s Plan Readiness score.</div>':'';
+ const privateFlag=d.private_conversation_requested?'<div class="coachPrompt"><b>Private conversation requested</b><br>The participant has asked to talk privately with a Career Coach. No reason or sensitive information was collected.</div>':'';
+ const supportHtml=(d.requested_support||[]).map(k=>supports[k]).filter(Boolean).map(v=>'<span class="chip">'+esc(v)+'</span>').join('');
+ return '<section class="section mindMap"><h3>My Path Forward · Pinal Mind Map '+badge+'</h3>'+
+ '<p class="notice">Optional post-O*NET reflection. The two ratings are coaching indicators, not eligibility or employability decisions.</p>'+
+ '<div class="miniGrid mindScores">'+mini('Participant readiness',self===null?'Not selected':self+' / 10')+mini('Plan Readiness',score===null?'Insufficient information':score+' / 10')+mini('Coaching stage',d.category||'Insufficient information')+'</div>'+
+ '<div class="coachPrompt"><b>Readiness interpretation</b><br>'+esc(d.interpretation||'No interpretation available yet.')+'</div>'+
+ refine+privateFlag+
+ '<h4>Readiness dimensions</h4>'+dimensionsHtml+
+ '<h4>Coach conversation starters</h4><ul class="mindPrompts">'+(coachQuestions.length?coachQuestions.map(q=>'<li>'+esc(q)+'</li>').join(''):'<li>What would be a useful first step for you?</li>')+'</ul>'+
+ '<h4>What would help the participant move forward?</h4><div class="chips">'+(supportHtml||'<span class="notice">No support choices saved.</span>')+'</div>'+
+ '<h4>Participant mind map</h4><div class="mindFields">'+fieldsHtml+'</div>'+
+ '<h4>Options to explore</h4><div class="chips">'+(optionsHtml||'<span class="notice">No options selected.</span>')+'</div>'+
+ historyHtml+'</section>';
+}
+'''
+anchor = 'function answerLabel(k,v)'
+if anchor not in s:
+    raise SystemExit('Coach report renderer insertion anchor missing')
+s = s.replace(anchor, mindmap_js + anchor, 1)
+find_discover = "module==='discover_me'?discoverHtml(ct.discover_me)"
+if find_discover not in s:
+    raise SystemExit('Discover Me detail routing anchor missing')
+s = s.replace(find_discover, "module==='discover_me'?discoverHtml(ct.discover_me)+pinalMindMapHtml(p?.county==='Pinal'?ct.my_path_forward:null)", 1)
+find_all = "discoverHtml(ct.discover_me)+exploreHtml(ct.explore_careers)"
+if find_all not in s:
+    raise SystemExit('All-modules detail routing anchor missing')
+s = s.replace(find_all, "discoverHtml(ct.discover_me)+(p?.county==='Pinal'?pinalMindMapHtml(ct.my_path_forward):'')+exploreHtml(ct.explore_careers)", 1)
+mind_css = """
+<style>
+.mindMap{border-top:3px solid #4e9c8a;padding-top:16px}
+.mindMap h4{color:#254e64;margin:16px 0 8px}
+.mindFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.mindField{border:1px solid #d3e1e6;border-radius:10px;padding:12px;background:#f6f9fa;min-width:0}
+.mindField b{font-size:11px;color:#284a5e}
+.mindField p{font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0 0}
+.mindScores .mini strong{font-size:16px;overflow-wrap:anywhere}
+.mindPrompts li{margin:7px 0;font-size:12px;line-height:1.5}
+.mindHistory{margin-top:14px;border:1px solid #cfdee4;padding:12px;border-radius:10px}
+.mindHistory summary{cursor:pointer;font-weight:800}
+@media(max-width:680px){.mindFields{grid-template-columns:1fr}}
+</style>
+"""
+if '</head>' not in s:
+    raise SystemExit('Coach CSS insertion anchor missing')
+s=s.replace('</head>',mind_css+'</head>',1)
+career.write_text(s,encoding='utf-8')
+print('Integrated optional Pinal My Path Forward inside Discover Me coach detail; core 3-module progress unchanged.')
