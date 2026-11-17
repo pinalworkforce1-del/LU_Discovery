@@ -18,11 +18,11 @@
       const index=Number.isInteger(row?.index)?row.index:position;
       return {
         index,question:clean(prompts[index]?.text||prompts[index]?.question||row?.question||'Interview question'),
-        answer:clean(answers[index]?.response||answers[index]?.answer),
+        answer:clean(row?.primary_response||answers[index]?.response||answers[index]?.answer),
         score:intScore(row?.score),strength:clean(row?.strength),growth:clean(row?.growth),
         practice:clean(row?.stronger_approach),
         followups:(Array.isArray(row?.followup_feedback)?row.followup_feedback:[]).map(x=>({
-          question:clean(x?.question_text),score:intScore(x?.score),
+          question:clean(x?.question_text),response:clean(x?.response_text),score:intScore(x?.score),
           strength:clean(x?.strength),growth:clean(x?.growth)
         }))
       };
@@ -51,6 +51,7 @@
       const size=options.size||10.5,spacing=options.spacing??7,lh=options.lineHeight||size*1.45;
       doc.setFont('helvetica',options.bold?'bold':'normal');doc.setFontSize(size);color(options.muted?colors.muted:colors.ink);
       const lines=doc.splitTextToSize(safePdf(text)||'Not provided.',content-(options.indent||0));
+      if(lines.length*lh+spacing<=limit-55&&y+lines.length*lh+spacing>limit)page();
       for(const line of lines){space(lh);doc.text(line,M+(options.indent||0),y);y+=lh}
       y+=spacing;reset();
     }
@@ -60,6 +61,7 @@
     }
     function field(label,value){
       if(!clean(value))return;
+      space(45);
       paragraph(label,{bold:true,spacing:1,size:9.5});
       paragraph(value,{spacing:10});
     }
@@ -82,7 +84,7 @@
     paragraph(model.overview||'No overview is available.');
     heading('Your questions and growth opportunities');
     for(const q of model.questions){
-      space(60);
+      space(105);
       paragraph('QUESTION '+(q.index+1)+': '+q.question,{bold:true,size:11,spacing:3});
       if(q.score!==null)paragraph('Answer quality: '+q.score+' / 5 (developmental indicator)',{size:9,muted:true,spacing:5});
       field('Your response',q.answer||'Response text not available in this report.');
@@ -93,6 +95,7 @@
         paragraph('Follow-up conversation',{bold:true,size:10,spacing:3});
         for(const follow of q.followups){
           field('Jacqueline asked',follow.question);
+          if(follow.response)field('Your follow-up response',follow.response);
           if(follow.score!==null)paragraph('Follow-up answer quality: '+follow.score+' / 5',{muted:true,size:9,spacing:3});
           field('What you demonstrated',follow.strength);
           field('Next improvement',follow.growth);
