@@ -49,6 +49,24 @@
        for(const x of [String(i+1),date(item.completed_at||item.ended_at),item.occupation||'Not selected',pretty(item.average_answer_quality)])entry(line,'td',x);
      }
    }
+   const dimensionKeys=[['Situation','situation'],['Action','action'],['Result','result'],
+     ['Specificity','specificity'],['Individual contribution','individual_contribution'],['Communication','communication']];
+   const hasDim=verified.filter(s=>dimensionKeys.some(([,key])=>s.dimensions?.[key]!==null&&s.dimensions?.[key]!==undefined));
+   if(hasDim.length>0){
+     entry(parent,'h3','SAR & communication development');
+     const dt=entry(parent,'table',null,'mock-table');
+     const dh=entry(entry(dt,'thead'),'tr');
+     for(const h of ['Evidence','First rated','Latest rated','Change'])entry(dh,'th',h);
+     const db=entry(dt,'tbody');
+     for(const [label,key] of dimensionKeys){
+       const comparable=verified.slice().reverse().filter(s=>s.dimensions?.[key]!==null&&s.dimensions?.[key]!==undefined);
+       const start=comparable[0]?.dimensions?.[key]??null;
+       const end=comparable[comparable.length-1]?.dimensions?.[key]??null;
+       const difference=comparable.length>=2?Math.round((end-start)*100)/100:null;
+       const tr=entry(db,'tr');
+       for(const x of [label,pretty(start),pretty(end),difference===null?'—':(difference>0?'+':'')+difference.toFixed(2)+'/5'])entry(tr,'td',x);
+     }
+   }
    entry(parent,'p','Score changes describe answer quality, not employability. Different questions or roles may limit comparisons. Legacy interviews may have no detailed dimensional scores.','mock-note');
    const latest=verified[0];
    if(latest?.feedback?.next_steps?.length){
