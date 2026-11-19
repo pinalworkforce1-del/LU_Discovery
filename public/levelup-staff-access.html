@@ -8,7 +8,7 @@ section{background:white;border:1px solid #cbd8df;padding:24px;border-radius:16p
 h1{font-size:23px}label{font-weight:700;display:block;margin:16px 0 5px}
 input,select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #b8cbd5;border-radius:8px;font:inherit}
 button{background:#102d49;color:white;padding:12px 20px;border:0;border-radius:9px;margin-top:18px;cursor:pointer}
-button:disabled{opacity:.5}.secondary{background:#e5edf2;color:#173248}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.divider{border-top:1px solid #cbd8df;margin:22px 0}.subtle{color:#526c7b;font-size:14px}.actions{display:flex;flex-wrap:wrap;gap:10px}.note{margin-top:10px}@media(max-width:580px){.grid{grid-template-columns:1fr}}a{color:#245779}.hidden{display:none}.status{background:#edf4f8;padding:14px;margin-top:18px;border-radius:8px;overflow-wrap:anywhere}
+button:disabled{opacity:.5}.secondary{background:#e5edf2;color:#173248}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.divider{border-top:1px solid #cbd8df;margin:22px 0}.subtle{color:#526c7b;font-size:14px}.actions{display:flex;flex-wrap:wrap;gap:10px}.note{margin-top:10px}.credential-panel{border:1px solid #cbd8df;background:#f7fafb;border-radius:12px;padding:14px 16px;margin-top:18px}.credential-panel p{margin:7px 0}.credential-heading{font-size:14px;font-weight:700;color:#38576b}.credential-date{font-weight:700}.credential-state{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;background:#e8edf1;color:#344b60}.credential-state.valid{background:#e7f5ed;color:#216b42}.credential-state.soon{background:#fff1cd;color:#805500}.credential-state.expired,.credential-state.missing{background:#fce7e7;color:#9b2525}.credential-panel .subtle{margin-top:8px}@media(max-width:580px){.grid{grid-template-columns:1fr}}a{color:#245779}.hidden{display:none}.status{background:#edf4f8;padding:14px;margin-top:18px;border-radius:8px;overflow-wrap:anywhere}
 code{font-size:18px;overflow-wrap:anywhere}p{line-height:1.5}
 </style></head><body><header><strong>LEVEL UP • STAFF ACCESS</strong></header><main>
 <section id="gate"><h1>Verifying administrator access</h1><p>Sign in through <a href="coach-level-up.html">Level Up Coach View</a> first.</p></section>
@@ -24,6 +24,12 @@ code{font-size:18px;overflow-wrap:anywhere}p{line-height:1.5}
 <div><label for="role">Role</label><select id="role"><option value="coach">Coach</option><option value="admin">Administrator</option></select></div>
 <div><label for="area">Assigned area</label>
 <select id="area"><option value="">All Areas</option><option value="Pinal">Pinal</option><option value="Northern">Northern Arizona</option><option value="UFO - Eastern New Mexico">Eastern New Mexico (UFO)</option></select></div>
+</div>
+<div id="credentialPanel" class="credential-panel" aria-live="polite">
+<div class="credential-heading">Staff access credential</div>
+<p><span id="credentialStatus" class="credential-state">Checking…</span></p>
+<p>Expiration date: <span id="credentialDate" class="credential-date">—</span></p>
+<p id="credentialRemaining" class="subtle">Select a team member to see their access-code expiration.</p>
 </div>
 <div class="actions"><button id="save" type="submit">Save staff details</button><button class="secondary" id="reload" type="button">Refresh directory</button></div>
 <p class="subtle note">All Areas means no geographic restriction. Restricted staff only see participant records in their selected area. Staff area changes apply to existing sessions when they make their next request.</p>
@@ -75,7 +81,55 @@ async function request(body){
   if(!r.ok)throw Error(v.error||'Request failed');
   return v;
 }
+function renderCredential(item){
+  const state=el('credentialStatus'),date=el('credentialDate'),remaining=el('credentialRemaining');
+  state.className='credential-state';
+  if(!item){
+    state.textContent='No staff selected';
+    date.textContent='—';
+    remaining.textContent='Select a team member to see their credential status.';
+    return;
+  }
+  if(!item.credential_configured){
+    state.textContent='No credentials';
+    state.classList.add('missing');
+    date.textContent='Not configured';
+    remaining.textContent='This staff member needs a staff access code to use credential-based login.';
+    return;
+  }
+  if(!item.credential_expires_at){
+    state.textContent='Expiration unavailable';
+    date.textContent='Not recorded';
+    remaining.textContent='No expiration date is recorded for this credential.';
+    return;
+  }
+  const expires=new Date(item.credential_expires_at);
+  if(Number.isNaN(expires.getTime())){
+    state.textContent='Date unavailable';
+    date.textContent='Not available';
+    remaining.textContent='The saved expiration date could not be read.';
+    return;
+  }
+  date.textContent=expires.toLocaleString(undefined,{year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+  const diff=expires.getTime()-Date.now();
+  if(diff<=0){
+    state.textContent='Expired';
+    state.classList.add('expired');
+    remaining.textContent='Expired. Generate a replacement access code to restore credential-based login.';
+  }else{
+    const days=Math.ceil(diff/86400000);
+    if(diff<=14*86400000){
+      state.textContent='Expiring soon';
+      state.classList.add('soon');
+    }else{
+      state.textContent='Active';
+      state.classList.add('valid');
+    }
+    remaining.textContent=days+' day'+(days===1?'':'s')+' remaining before expiration.';
+  }
+}
 function fill(item){
+  renderCredential(item);
   el('email').value=item?.email_normalized||'';
   el('name').value=item?.display_name||'';
   el('role').value=item?.role||'coach';
