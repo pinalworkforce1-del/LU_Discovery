@@ -3,31 +3,47 @@
 <title>Level Up | Staff Access</title>
 <style>
 body{font-family:Segoe UI,Arial,sans-serif;background:#eef3f5;color:#173248;margin:0}
-header{background:#102d49;color:white;padding:18px 24px}main{max-width:650px;margin:32px auto;padding:0 16px}
+header{background:#102d49;color:white;padding:18px 24px}main{max-width:900px;margin:32px auto;padding:0 16px}
 section{background:white;border:1px solid #cbd8df;padding:24px;border-radius:16px}
 h1{font-size:23px}label{font-weight:700;display:block;margin:16px 0 5px}
 input,select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #b8cbd5;border-radius:8px;font:inherit}
 button{background:#102d49;color:white;padding:12px 20px;border:0;border-radius:9px;margin-top:18px;cursor:pointer}
-button:disabled{opacity:.5}a{color:#245779}.hidden{display:none}.status{background:#edf4f8;padding:14px;margin-top:18px;border-radius:8px;overflow-wrap:anywhere}
+button:disabled{opacity:.5}.secondary{background:#e5edf2;color:#173248}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.divider{border-top:1px solid #cbd8df;margin:22px 0}.subtle{color:#526c7b;font-size:14px}.actions{display:flex;flex-wrap:wrap;gap:10px}.note{margin-top:10px}@media(max-width:580px){.grid{grid-template-columns:1fr}}a{color:#245779}.hidden{display:none}.status{background:#edf4f8;padding:14px;margin-top:18px;border-radius:8px;overflow-wrap:anywhere}
 code{font-size:18px;overflow-wrap:anywhere}p{line-height:1.5}
 </style></head><body><header><strong>LEVEL UP • STAFF ACCESS</strong></header><main>
 <section id="gate"><h1>Verifying administrator access</h1><p>Sign in through <a href="coach-level-up.html">Level Up Coach View</a> first.</p></section>
-<section id="admin" class="hidden"><h1>Manage staff access</h1><p>Administrators can issue a new access code. The old code will immediately stop working. Existing participant assignments are retained.</p>
-<form id="reset">
-<label for="email">Staff email</label><input id="email" type="email" required autocomplete="off" value="jmontero@eckerd.org">
-<label for="name">Display name</label><input id="name" required value="Jose Montero">
-<label for="role">Role</label><select id="role"><option value="coach">Coach</option><option value="admin">Administrator</option></select>
-<button id="submit">Generate replacement code</button></form>
-<div id="feedback" class="status hidden" role="status"></div><div id="result" class="hidden">
-<p><strong>New access code — copy and share privately:</strong></p><div class="status"><code id="code"></code></div>
-<button id="copy" type="button">Copy code</button><p>Credential expires after 90 days. The code is only displayed during this reset.</p></div></section></main>
+<section id="admin" class="hidden">
+<h1>Manage staff access</h1>
+<p class="subtle">Choose a staff member to change their role or assigned area. Saving staff details does <strong>not</strong> reset their login code or participant assignments.</p>
+<label for="staffPicker">Existing staff</label>
+<select id="staffPicker"><option value="">Loading staff directory…</option></select>
+<form id="details">
+<div class="grid">
+<div><label for="email">Staff email</label><input id="email" type="email" required autocomplete="off" placeholder="name@example.org"></div>
+<div><label for="name">Display name</label><input id="name" required autocomplete="off"></div>
+<div><label for="role">Role</label><select id="role"><option value="coach">Coach</option><option value="admin">Administrator</option></select></div>
+<div><label for="area">Assigned area</label>
+<select id="area"><option value="">All Areas</option><option value="Pinal">Pinal</option><option value="Northern">Northern Arizona</option><option value="UFO - Eastern New Mexico">Eastern New Mexico (UFO)</option></select></div>
+</div>
+<div class="actions"><button id="save" type="submit">Save staff details</button><button class="secondary" id="reload" type="button">Refresh directory</button></div>
+<p class="subtle note">All Areas means no geographic restriction. Restricted staff only see participant records in their selected area. Staff area changes apply to existing sessions when they make their next request.</p>
+</form>
+<div id="feedback" class="status hidden" role="status" aria-live="polite"></div>
+<div class="divider"></div>
+<h2>Staff access code</h2>
+<p class="subtle">Only use this when adding new staff or replacing a code. Generating a code immediately invalidates the previous code. To change an area, use <strong>Save staff details</strong> above instead.</p>
+<button id="generateCode" type="button">Generate new or replacement code</button>
+<div id="result" class="hidden"><p><strong>New access code — copy and share privately:</strong></p><div class="status"><code id="code"></code></div><button id="copy" type="button">Copy code</button><p class="subtle">Credential expires after 90 days. This code is displayed only during creation.</p></div>
+</section></main>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
 const BASE='https://dnijrzotfyvmmnmueknk.supabase.co';
 const URL=BASE+'/functions/v1/levelup-facilitated';
 const supabase=createClient(BASE,'sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const el=id=>document.getElementById(id);
-let auth=null;
+const show=(message)=>{el('feedback').classList.remove('hidden');el('feedback').textContent=message};
+const selected=()=>directory.find(x=>x.email_normalized===el('staffPicker').value)||null;
+let auth=null,directory=[];
 async function authorize(){
   const staffToken=localStorage.getItem('levelup-coach-staff-token-v1')||'';
   if(staffToken){
@@ -49,7 +65,6 @@ async function authorize(){
 }
 async function request(body){
   if(!auth)throw Error('Administrator sign-in required');
-  // Refresh the Supabase token for email-based sessions before privileged writes.
   if(!auth.staffToken){
     const {data:{session}}=await supabase.auth.getSession();
     if(!session?.access_token)throw Error('Your administrator sign-in has expired. Please sign in again.');
@@ -60,39 +75,85 @@ async function request(body){
   if(!r.ok)throw Error(v.error||'Request failed');
   return v;
 }
-async function init(){
-  try{
-    auth=await authorize();
-    el('gate').classList.add('hidden');
-    el('admin').classList.remove('hidden');
-  }catch(e){
-    el('gate').querySelector('h1').textContent='Administrator sign-in required';
-    el('gate').querySelector('p').textContent=e.message+'. Sign in to the main Coach View as an administrator and return to this page.';
-  }
+function fill(item){
+  el('email').value=item?.email_normalized||'';
+  el('name').value=item?.display_name||'';
+  el('role').value=item?.role||'coach';
+  el('area').value=item?.county_scope||'';
+  el('email').readOnly=Boolean(item);
+  el('save').disabled=!item;
+  el('result').classList.add('hidden');
+  el('feedback').classList.add('hidden');
 }
+async function loadStaff(preferred=''){
+  const data=await request({action:'admin_list_staff'});
+  directory=data.staff||[];
+  const picker=el('staffPicker');
+  picker.replaceChildren();
+  for(const s of directory){
+    const option=document.createElement('option');
+    option.value=s.email_normalized;
+    option.textContent=s.display_name+' — '+s.email_normalized+(s.county_scope?' ('+s.county_scope+')':' (All Areas)');
+    picker.append(option);
+  }
+  const newOption=document.createElement('option');
+  newOption.value='__new';
+  newOption.textContent='＋ Add new staff member';
+  picker.append(newOption);
+  const match=directory.find(x=>x.email_normalized===preferred);
+  const jose=directory.find(x=>x.email_normalized==='jmontero@eckerd.org');
+  picker.value=match?.email_normalized||jose?.email_normalized||directory[0]?.email_normalized||'__new';
+  fill(selected());
+}
+el('staffPicker').onchange=()=>fill(selected());
+el('reload').onclick=async()=>{const value=el('staffPicker').value;try{await loadStaff(value);show('Staff directory refreshed.')}catch(e){show('Could not load directory: '+e.message)}};
+el('details').onsubmit=async e=>{
+  e.preventDefault();
+  const item=selected();
+  if(!item){show('New staff members need a generated access code. Enter their details and use the code button below.');return}
+  const email=item.email_normalized,display_name=el('name').value.trim(),role=el('role').value,county_scope=el('area').value||null;
+  if(!confirm('Save staff role and area for '+display_name+' ('+email+')?'))return;
+  el('save').disabled=true;
+  try{
+    const data=await request({action:'admin_update_staff',email,display_name,role,county_scope});
+    await loadStaff(data.staff.email_normalized);
+    show('Saved: '+data.staff.display_name+' • '+data.staff.role+' • '+(data.staff.county_scope||'All Areas')+'. Existing access code preserved.');
+  }catch(error){show('Could not save staff details: '+error.message)}
+  finally{el('save').disabled=!selected()}
+};
 function generate(){
   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);
   return Array.from(bytes,b=>alphabet[b%alphabet.length]).join('');
 }
-el('reset').onsubmit=async e=>{
-  e.preventDefault();
-  const email=el('email').value.trim().toLowerCase(),name=el('name').value.trim(),role=el('role').value;
-  if(!confirm('Replace staff access code for '+name+' ('+email+') as '+role+'?'))return;
+el('generateCode').onclick=async()=>{
+  const email=el('email').value.trim().toLowerCase(),display_name=el('name').value.trim(),role=el('role').value,county_scope=el('area').value||null;
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!display_name){show('Enter a valid staff name and email first.');return}
+  if(!confirm('Generate a new staff access code for '+display_name+' ('+email+')? Any previous code will immediately stop working.'))return;
   const code=generate();
-  el('submit').disabled=true;
-  el('result').classList.add('hidden');
-  el('feedback').classList.remove('hidden');
-  el('feedback').textContent='Processing credential reset…';
+  el('generateCode').disabled=true;el('result').classList.add('hidden');show('Processing staff access code…');
   try{
-    const r=await request({action:'admin_provision_staff',email,display_name:name,role,access_code:code,preserve_existing:false});
-    el('feedback').textContent='Credential reset successful for '+r.staff.display_name+' ('+r.staff.email+').';
+    const result=await request({action:'admin_provision_staff',email,display_name,role,county_scope,access_code:code,preserve_existing:false});
+    await loadStaff(result.staff.email);
+    show('Credential created for '+result.staff.display_name+'. Copy the code below and share it privately.');
     el('code').textContent=code;
     el('result').classList.remove('hidden');
-  }catch(err){
-    el('feedback').textContent='Credential was not reset: '+err.message;
-  }finally{el('submit').disabled=false}
+  }catch(error){show('Credential not created: '+error.message)}
+  finally{el('generateCode').disabled=false}
 };
 el('copy').onclick=()=>navigator.clipboard.writeText(el('code').textContent).then(()=>el('copy').textContent='Copied').catch(()=>el('copy').textContent='Select code above to copy');
+async function init(){
+  try{
+    auth=await authorize();
+    el('gate').classList.add('hidden');
+    el('admin').classList.remove('hidden');
+    await loadStaff('jmontero@eckerd.org');
+  }catch(e){
+    if(!auth){
+      el('gate').querySelector('h1').textContent='Administrator sign-in required';
+      el('gate').querySelector('p').textContent=e.message+'. Sign in to the main Coach View as an administrator and return to this page.';
+    }else show('Staff directory unavailable: '+e.message);
+  }
+}
 init();
 </script></body></html>
