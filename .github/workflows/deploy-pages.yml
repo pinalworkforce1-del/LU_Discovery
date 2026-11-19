@@ -141,7 +141,9 @@ jobs:
       - name: Verify Staff Access Management deployment file
         run: |
           test -f dist/levelup-staff-access.html
-          grep -q 'Generate replacement code' dist/levelup-staff-access.html
+          grep -q 'Save staff details' dist/levelup-staff-access.html
+          grep -q 'admin_update_staff' dist/levelup-staff-access.html
+          grep -q 'Assigned area' dist/levelup-staff-access.html
 
       - name: Generate offline manifest
         run: node scripts/generate-offline-manifest.mjs dist /LU_Discovery/
