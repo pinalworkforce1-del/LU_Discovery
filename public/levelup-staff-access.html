@@ -14,24 +14,85 @@ code{font-size:18px;overflow-wrap:anywhere}p{line-height:1.5}
 <section id="gate"><h1>Verifying administrator access</h1><p>Sign in through <a href="coach-level-up.html">Level Up Coach View</a> first.</p></section>
 <section id="admin" class="hidden"><h1>Manage staff access</h1><p>Administrators can issue a new access code. The old code will immediately stop working. Existing participant assignments are retained.</p>
 <form id="reset">
-<label for="email">Staff email</label><input id="email" type="email" required autocomplete="off" value="ccusker@eckerd.org">
-<label for="name">Display name</label><input id="name" required value="Cori Cusker">
+<label for="email">Staff email</label><input id="email" type="email" required autocomplete="off" value="jmontero@eckerd.org">
+<label for="name">Display name</label><input id="name" required value="Jose Montero">
 <label for="role">Role</label><select id="role"><option value="coach">Coach</option><option value="admin">Administrator</option></select>
 <button id="submit">Generate replacement code</button></form>
 <div id="feedback" class="status hidden" role="status"></div><div id="result" class="hidden">
 <p><strong>New access code — copy and share privately:</strong></p><div class="status"><code id="code"></code></div>
 <button id="copy" type="button">Copy code</button><p>Credential expires after 90 days. The code is only displayed during this reset.</p></div></section></main>
-<script>
-const URL='https://dnijrzotfyvmmnmueknk.supabase.co/functions/v1/levelup-facilitated';
-const token=localStorage.getItem('levelup-coach-staff-token-v1')||'';
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/+esm';
+const BASE='https://dnijrzotfyvmmnmueknk.supabase.co';
+const URL=BASE+'/functions/v1/levelup-facilitated';
+const supabase=createClient(BASE,'sb_publishable_qSEo4iczJBozMaSIvTKisw_BsJy-iPc',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const el=id=>document.getElementById(id);
-async function request(body){const r=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json','X-Levelup-Staff-Token':token},body:JSON.stringify(body)});const v=await r.json();if(!r.ok)throw Error(v.error||'Request failed');return v}
-async function init(){try{if(!token)throw Error('No staff session found');const a=await request({action:'staff_resume'});if(a.staff?.role!=='admin')throw Error('Administrator role required');el('gate').classList.add('hidden');el('admin').classList.remove('hidden')}catch(e){el('gate').querySelector('h1').textContent='Administrator sign-in required';el('gate').querySelector('p').textContent=e.message+'. Sign in to the main Coach View as an administrator and return to this page.'}}
-function generate(){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);return Array.from(bytes,b=>alphabet[b%alphabet.length]).join('')}
-el('reset').onsubmit=async e=>{e.preventDefault();const email=el('email').value.trim().toLowerCase(),name=el('name').value.trim(),role=el('role').value;if(!confirm('Replace staff access code for '+name+' ('+email+') as '+role+'?'))return;
-const code=generate();el('submit').disabled=true;el('result').classList.add('hidden');el('feedback').classList.remove('hidden');el('feedback').textContent='Processing credential reset…';
-try{const r=await request({action:'admin_provision_staff',staff_token:token,email,display_name:name,role,access_code:code,preserve_existing:false});el('feedback').textContent='Credential reset successful for '+r.staff.display_name+' ('+r.staff.email+').';el('code').textContent=code;el('result').classList.remove('hidden')}
-catch(err){el('feedback').textContent='Credential was not reset: '+err.message}finally{el('submit').disabled=false}};
+let auth=null;
+async function authorize(){
+  const staffToken=localStorage.getItem('levelup-coach-staff-token-v1')||'';
+  if(staffToken){
+    const headers={'Content-Type':'application/json','X-Levelup-Staff-Token':staffToken};
+    const response=await fetch(URL,{method:'POST',headers,body:JSON.stringify({action:'staff_resume'})});
+    if(response.ok){
+      const data=await response.json();
+      if(data.staff?.role==='admin')return {headers,staffToken};
+    }
+  }
+  const {data:{session},error}=await supabase.auth.getSession();
+  if(error||!session?.access_token)throw Error('No staff session found');
+  const headers={'Content-Type':'application/json','Authorization':'Bearer '+session.access_token};
+  const response=await fetch(URL,{method:'POST',headers,body:JSON.stringify({action:'coach_roster'})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(data.error||'Unable to verify administrator access');
+  if(data.coach?.role!=='admin')throw Error('Administrator role required');
+  return {headers,staffToken:null};
+}
+async function request(body){
+  if(!auth)throw Error('Administrator sign-in required');
+  // Refresh the Supabase token for email-based sessions before privileged writes.
+  if(!auth.staffToken){
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session?.access_token)throw Error('Your administrator sign-in has expired. Please sign in again.');
+    auth.headers.Authorization='Bearer '+session.access_token;
+  }
+  const r=await fetch(URL,{method:'POST',headers:auth.headers,body:JSON.stringify(body)});
+  const v=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(v.error||'Request failed');
+  return v;
+}
+async function init(){
+  try{
+    auth=await authorize();
+    el('gate').classList.add('hidden');
+    el('admin').classList.remove('hidden');
+  }catch(e){
+    el('gate').querySelector('h1').textContent='Administrator sign-in required';
+    el('gate').querySelector('p').textContent=e.message+'. Sign in to the main Coach View as an administrator and return to this page.';
+  }
+}
+function generate(){
+  const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes=new Uint8Array(24);crypto.getRandomValues(bytes);
+  return Array.from(bytes,b=>alphabet[b%alphabet.length]).join('');
+}
+el('reset').onsubmit=async e=>{
+  e.preventDefault();
+  const email=el('email').value.trim().toLowerCase(),name=el('name').value.trim(),role=el('role').value;
+  if(!confirm('Replace staff access code for '+name+' ('+email+') as '+role+'?'))return;
+  const code=generate();
+  el('submit').disabled=true;
+  el('result').classList.add('hidden');
+  el('feedback').classList.remove('hidden');
+  el('feedback').textContent='Processing credential reset…';
+  try{
+    const r=await request({action:'admin_provision_staff',email,display_name:name,role,access_code:code,preserve_existing:false});
+    el('feedback').textContent='Credential reset successful for '+r.staff.display_name+' ('+r.staff.email+').';
+    el('code').textContent=code;
+    el('result').classList.remove('hidden');
+  }catch(err){
+    el('feedback').textContent='Credential was not reset: '+err.message;
+  }finally{el('submit').disabled=false}
+};
 el('copy').onclick=()=>navigator.clipboard.writeText(el('code').textContent).then(()=>el('copy').textContent='Copied').catch(()=>el('copy').textContent='Select code above to copy');
 init();
 </script></body></html>
